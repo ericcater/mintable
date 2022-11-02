@@ -3,16 +3,12 @@ name: Fetch
 on:
   push:
     branches: [ master ]
-  
-  pull_request:
-    branches: [ master ]
 
   schedule:
      - cron:  '0 * * * *'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
