@@ -35,7 +35,7 @@ export class CSVImportIntegration {
                         const files = glob.sync(path)
 
                         if (files.length === 0) {
-                            logError(`No files resolved for path glob ${path}.`)
+                            logError(`No files resolved for path glob ${path}`)
                         }
 
                         return files.map(match => {
@@ -104,7 +104,7 @@ export class CSVImportIntegration {
                             }
                         })
                     } catch (e) {
-                        logError(`Error resolving path glob ${path}.`, e)
+                        logError(`Error resolving path glob ${path}`, e)
                     }
                 })
                 .flat(10)

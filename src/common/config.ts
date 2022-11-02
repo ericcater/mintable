@@ -60,7 +60,7 @@ export const getConfigSource = (): ConfigSource => {
 
     // Default to DEFAULT_CONFIG_FILE
     const path = DEFAULT_CONFIG_FILE.replace(/^~(?=$|\/|\\)/, os.homedir())
-    logInfo(`Using default configuration file \`${path}.\``)
+    logInfo(`Using default configuration file \`${path}\``)
     logInfo(`You can supply either --config-file or --config-variable to specify a different configuration.`)
     return { type: 'file', path: path }
 }
