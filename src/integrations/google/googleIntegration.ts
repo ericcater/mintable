@@ -7,7 +7,6 @@ import { logInfo, logError } from '../../common/logging'
 import { Account } from '../../types/account'
 import { sortBy, groupBy } from 'lodash'
 import { startOfMonth, format, formatISO, parseISO } from 'date-fns'
-import { createHash } from 'crypto'
 
 export interface Range {
     sheet: string
@@ -336,9 +335,6 @@ export class GoogleIntegration {
         // Sort transactions by date
         const transactions = sortBy(accounts.map(account => account.transactions).flat(10), 'date')
 
-        //had hash of transaction data to transaction
-        transactions.forEach((transaction, index, array) => transaction.hash = createHash('sha256').update(transaction.date.toDateString()+"~"+transaction.amount+"~"+transaction.name+"~"+transaction.accountId).digest('hex'))
-        
         // Split transactions by month
         const groupedTransactions = groupBy(transactions, transaction => formatISO(startOfMonth(transaction.date)))
 

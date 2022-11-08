@@ -44,8 +44,6 @@ export interface Transaction {
 
     // whether the transaction has posted or not
     pending?: boolean
-
-    hash?: string
 }
 
 export interface TransactionRuleCondition {
