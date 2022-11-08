@@ -241,7 +241,7 @@ export class PlaidIntegration {
                     latitude: transaction.location.lat,
                     longitude: transaction.location.lon,
                     pending: transaction.pending,
-                    hash: "null"
+                    hash: "null",
                 }))
 
                 accounts = accounts.map(account => ({
