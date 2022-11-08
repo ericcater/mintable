@@ -352,7 +352,7 @@ export class GoogleIntegration {
         await this.sortSheets()
 
         // Format, etc.
-        await this.formatSheets()
+        // await this.formatSheets()
 
         logInfo('You can view your sheet here:\n')
         console.log(`https://docs.google.com/spreadsheets/d/${this.googleConfig.documentId}`)
@@ -366,7 +366,7 @@ export class GoogleIntegration {
         await this.sortSheets()
 
         // Format, etc.
-        await this.formatSheets()
+        // await this.formatSheets()
 
         logInfo('You can view your sheet here:\n')
         console.log(`https://docs.google.com/spreadsheets/d/${this.googleConfig.documentId}`)
