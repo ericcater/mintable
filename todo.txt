@@ -1,4 +1,1 @@
 TODO:
-
-Change it to only one big sheet, instead of separated by month
-Add history of account balance

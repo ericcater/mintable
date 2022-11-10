@@ -343,24 +343,28 @@ export class GoogleIntegration {
         return this.updateRanges([{ range, data }])
     }
 
-    public updateTransactions = async (accounts: Account[]) => {
+    public updateTransactions = async (accounts: Account[], writeToOneSheet?: boolean) => {
         // Sort transactions by date
         const transactions = sortBy(accounts.map(account => account.transactions).flat(10), 'date')
 
-        // Split transactions by month
-        const groupedTransactions = groupBy(transactions, transaction => formatISO(startOfMonth(transaction.date)))
+        //Not terribly useful in currently since anything that isn't fetched this run is overwritten
+        if (writeToOneSheet) {
+            await this.updateSheet("AllTest",transactions,this.config.transactions.properties,true,true)
+        } else {
+            // Split transactions by month
+            const groupedTransactions = groupBy(transactions, transaction => formatISO(startOfMonth(transaction.date)))
 
-        // Write transactions by month, copying template sheet if necessary
-        for (const month in groupedTransactions) {
-            await this.updateSheet(
-                format(parseISO(month), this.googleConfig.dateFormat || 'yyyy.MM'),
-                groupedTransactions[month],
-                this.config.transactions.properties,
-                true,
-                true
-            )
+            // Write transactions by month, copying template sheet if necessary
+            for (const month in groupedTransactions) {
+                await this.updateSheet(
+                    format(parseISO(month), this.googleConfig.dateFormat || 'yyyy.MM'),
+                    groupedTransactions[month],
+                    this.config.transactions.properties,
+                    true,
+                    true
+                )
+            }
         }
-
         // Sort Sheets
         await this.sortSheets()
 
@@ -431,7 +435,7 @@ export class GoogleIntegration {
                 spreadsheetId: this.googleConfig.documentId,
                 range: `${sheetTitle}!A:A`
             })
-            .then(res => res.data.values[res.data.values.length-1][0])
+            .then(res => res.data.values[res.data.values.length - 1][0])
 
         if (lastDate === date) {
             console.log('Day has been recorded')
@@ -445,7 +449,6 @@ export class GoogleIntegration {
                 range: `${sheetTitle}!1:1`
             })
             .then(res => res.data.values[0])
-
 
         const missingIds = ids.filter(id => !idsFromSheet.includes(id))
 
@@ -463,7 +466,6 @@ export class GoogleIntegration {
         //#endregion add missing ids
 
         const allIds = idsFromSheet.concat(missingIds)
-
 
         const row: any[] = allIds.map(id => accounts.find(acc => acc.accountId === id)?.current || '')
         row[0] = date
