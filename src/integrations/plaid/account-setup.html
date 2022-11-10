@@ -27,6 +27,7 @@
                 let options = {
                     env: params.get('environment'),
                     onSuccess: function(public_token, metadata) {
+                        // console.log(public_token)
                         $.post('/get_access_token', { public_token }).then(setTimeout(() => location.reload(), 1000))
                     },
                     onExit: function(error, metadata) {
@@ -40,7 +41,7 @@
                 }
 
                 $.post('/accounts').then(accounts => {
-                    console.log(accounts)
+                    // console.log(accounts)
 
                     if (accounts.length == 0) {
                         const text = `<p>No Plaid accounts set up yet. Click "Link A New Account" to add one.`

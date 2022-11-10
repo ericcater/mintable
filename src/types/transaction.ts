@@ -41,11 +41,8 @@ export interface Transaction {
     latitude?: number
     // longitude where the transaction occurred
     longitude?: number
-
     // whether the transaction has posted or not
     pending?: boolean
-
-    hash?: string
 }
 
 export interface TransactionRuleCondition {

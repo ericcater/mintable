@@ -81,11 +81,11 @@ export class PlaidIntegration {
             let server: http.Server
 
             app.post('/get_access_token', (req, res) => {
-                console.log(req.body.public_token)
+                // console.log(req.body.public_token)
                 if (req.body.public_token !== undefined) {
                     client.itemPublicTokenExchange({ public_token: req.body.public_token }).then(res => {
                         this.savePublicToken(res.data)
-                        console.log(res.data)
+                        // console.log(res.data)
                         resolve(logInfo('Plaid access token saved.', req.body))
                     })
                 } else if (req.body.exit !== undefined) {
@@ -138,7 +138,7 @@ export class PlaidIntegration {
                 const result = await this.client.linkTokenCreate(options)
 
                 res.json({ link_token: result.data.link_token })
-                console.log(result.data.link_token)
+                // console.log(result.data.link_token)
             })
             app.post('/remove', async (req, res) => {
                 try {
@@ -214,7 +214,7 @@ export class PlaidIntegration {
                 }
                 return resolve({ accounts: response.data.accounts, transactions: transactions })
             } catch (e) {
-                console.log(e)
+                // console.log(e)
                 return reject(e)
             }
         })
@@ -258,8 +258,7 @@ export class PlaidIntegration {
                     country: transaction.location.country,
                     latitude: transaction.location.lat,
                     longitude: transaction.location.lon,
-                    pending: transaction.pending,
-                    hash: "null",
+                    pending: transaction.pending
                 }))
 
                 accounts = accounts.map(account => ({

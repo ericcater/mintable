@@ -1,6 +1,4 @@
 TODO:
 
 Change it to only one big sheet, instead of separated by month
-Add history off account balance
-build unique database of past transactions
-clear sheet instead of only range when adding transactions
+Add history of account balance

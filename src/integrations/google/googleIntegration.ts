@@ -5,14 +5,13 @@ import { GoogleConfig } from '../../types/integrations/google'
 import { OAuth2Client, Credentials } from 'google-auth-library'
 import { logInfo, logError } from '../../common/logging'
 import { Account } from '../../types/account'
-import { sortBy, groupBy } from 'lodash'
+import { sortBy, groupBy, camelCase, concat } from 'lodash'
 import { startOfMonth, format, formatISO, parseISO } from 'date-fns'
-import { createHash } from 'crypto'
 
 export interface Range {
     sheet: string
-    start: string
-    end: string
+    start?: string
+    end?: string
 }
 
 export interface DataRange {
@@ -155,8 +154,19 @@ export class GoogleIntegration {
             })
     }
 
-    public translateRange = (range: Range): string =>
-        `'${range.sheet}'!${range.start.toUpperCase()}:${range.end.toUpperCase()}`
+    public translateRange = (range: Range): string => {
+        let result: string = range.sheet
+
+        if (range.start) {
+            result += `!${range.start}`
+
+            if (range.end) {
+                result += `:${range.end}`
+            }
+        }
+
+        return result
+    }
 
     public translateRanges = (ranges: Range[]): string[] => ranges.map(this.translateRange)
 
@@ -300,7 +310,8 @@ export class GoogleIntegration {
         sheetTitle: string,
         rows: { [key: string]: any }[],
         columns?: string[],
-        useTemplate?: boolean
+        useTemplate?: boolean,
+        clearEntireSheet?: boolean
     ): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> => {
         const sheets = await this.getSheets()
         const existing = sheets.find(sheet => sheet.properties.title === sheetTitle)
@@ -328,7 +339,7 @@ export class GoogleIntegration {
         }
         const data = [columns].concat(rows.map(row => this.getRowWithDefaults(row, columns)))
 
-        await this.clearRanges([range])
+        await this.clearRanges(clearEntireSheet === true ? [{ sheet: sheetTitle }] : [range])
         return this.updateRanges([{ range, data }])
     }
 
@@ -336,9 +347,6 @@ export class GoogleIntegration {
         // Sort transactions by date
         const transactions = sortBy(accounts.map(account => account.transactions).flat(10), 'date')
 
-        //had hash of transaction data to transaction
-        transactions.forEach((transaction, index, array) => transaction.hash = createHash('sha256').update(transaction.date.toDateString()+"~"+transaction.amount+"~"+transaction.name+"~"+transaction.accountId).digest('hex'))
-        
         // Split transactions by month
         const groupedTransactions = groupBy(transactions, transaction => formatISO(startOfMonth(transaction.date)))
 
@@ -348,6 +356,7 @@ export class GoogleIntegration {
                 format(parseISO(month), this.googleConfig.dateFormat || 'yyyy.MM'),
                 groupedTransactions[month],
                 this.config.transactions.properties,
+                true,
                 true
             )
         }
@@ -366,6 +375,8 @@ export class GoogleIntegration {
         // Update Account Balances Sheets
         await this.updateSheet('Balances', accounts, this.config.balances.properties)
 
+        await this.balanceHistory('History', accounts)
+
         // Sort Sheets
         await this.sortSheets()
 
@@ -374,5 +385,111 @@ export class GoogleIntegration {
 
         logInfo('You can view your sheet here:\n')
         console.log(`https://docs.google.com/spreadsheets/d/${this.googleConfig.documentId}`)
+    }
+
+    public balanceHistory = async (sheetTitle: string, accounts: Account[], useTemplate?: boolean) => {
+        const columnHeaders = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+        const ids = accounts.map(account => account.accountId)
+        const rowOffset: number = 3 // 1 to not overwrite last line, two for account id/name
+        const dateFormat = 'MM/dd/yyyy'
+        const date = format(new Date(), dateFormat)
+
+        //#region create sheet
+
+        //create sheet if it doesn't exist
+        const sheets = await this.getSheets()
+        const existing = sheets.find(sheet => sheet.properties.title === sheetTitle)
+
+        if (existing === undefined) {
+            if (this.googleConfig.template && useTemplate === true) {
+                const copied = await this.copySheet(
+                    this.googleConfig.template.sheetTitle,
+                    this.googleConfig.template.documentId
+                )
+                await this.renameSheet(copied.title, sheetTitle)
+            } else {
+                await this.addSheet(sheetTitle)
+            }
+
+            this.updateRanges([
+                {
+                    range: {
+                        sheet: sheetTitle,
+                        start: 'A1'
+                    },
+                    data: [['Date']]
+                }
+            ])
+        }
+        //#endregion create sheet
+
+        //#region add missing ids
+
+        //#region check if this day has been done
+        const lastDate = await this.sheets.values
+            .get({
+                spreadsheetId: this.googleConfig.documentId,
+                range: `${sheetTitle}!A:A`
+            })
+            .then(res => res.data.values[res.data.values.length-1][0])
+
+        if (lastDate === date) {
+            console.log('Day has been recorded')
+            return
+        }
+        // #endregion check if this day has been done
+
+        let idsFromSheet = await this.sheets.values
+            .get({
+                spreadsheetId: this.googleConfig.documentId,
+                range: `${sheetTitle}!1:1`
+            })
+            .then(res => res.data.values[0])
+
+
+        const missingIds = ids.filter(id => !idsFromSheet.includes(id))
+
+        this.updateRanges([
+            {
+                range: {
+                    sheet: sheetTitle,
+                    start: `${columnHeaders[idsFromSheet.length]}1`,
+                    end: `${columnHeaders[idsFromSheet.length + missingIds.length]}1`
+                },
+                data: [missingIds]
+            }
+        ])
+
+        //#endregion add missing ids
+
+        const allIds = concat(idsFromSheet, missingIds)
+
+
+        const row: any[] = allIds.map(id => accounts.find(acc => acc.accountId === id)?.current || '')
+        row[0] = date
+
+        //#region get existing data
+
+        const existingDataRange = this.translateRange({
+            sheet: sheetTitle,
+            start: 'A3',
+            end: `${columnHeaders[row.length > 0 ? row.length - 1 : 1]}`
+        })
+
+        const existingData = await this.sheets.values.get({
+            spreadsheetId: this.googleConfig.documentId,
+            range: existingDataRange
+        })
+
+        const numRows = existingData.data.values ? existingData.data.values.length : 0
+        //#endregion get existing data
+
+        const newDataRange: Range = {
+            sheet: sheetTitle,
+            start: `A${numRows + rowOffset}`,
+            end: `${columnHeaders[row.length > 0 ? row.length - 1 : 1]}${numRows + rowOffset}`
+        }
+
+        return this.updateRanges([{ range: newDataRange, data: [row] }])
     }
 }
