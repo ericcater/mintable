@@ -462,7 +462,7 @@ export class GoogleIntegration {
 
         //#endregion add missing ids
 
-        const allIds = concat(idsFromSheet, missingIds)
+        const allIds = idsFromSheet.concat(missingIds)
 
 
         const row: any[] = allIds.map(id => accounts.find(acc => acc.accountId === id)?.current || '')
