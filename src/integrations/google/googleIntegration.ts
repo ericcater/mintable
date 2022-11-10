@@ -5,7 +5,7 @@ import { GoogleConfig } from '../../types/integrations/google'
 import { OAuth2Client, Credentials } from 'google-auth-library'
 import { logInfo, logError } from '../../common/logging'
 import { Account } from '../../types/account'
-import { sortBy, groupBy, camelCase, concat } from 'lodash'
+import { sortBy, groupBy } from 'lodash'
 import { startOfMonth, format, formatISO, parseISO } from 'date-fns'
 
 export interface Range {
