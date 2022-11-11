@@ -7,7 +7,8 @@ import plaid from '../integrations/plaid/setup'
 import google from '../integrations/google/setup'
 import csvImport from '../integrations/csv-import/setup'
 import csvExport from '../integrations/csv-export/setup'
-import accountSetup from '../integrations/plaid/accountSetup'
+import plaidAccountSetup from '../integrations/plaid/accountSetup'
+import mxAccountSetup from '../integrations/mx/accountSetup'
 import fetch from './fetch'
 import migrate from './migrate'
 import { logError } from '../common/logging'
@@ -40,7 +41,8 @@ import { logError } from '../common/logging'
         migrate: migrate,
         fetch: fetch,
         'plaid-setup': plaid,
-        'account-setup': accountSetup,
+        'plaid-account-setup': plaidAccountSetup,
+        'mx-account-setup': mxAccountSetup,
         'google-setup': google,
         'csv-import-setup': csvImport,
         'csv-export-setup': csvExport
@@ -66,7 +68,8 @@ import { logError } from '../common/logging'
         updateConfig(config => config, true)
         await plaid()
         await google()
-        await accountSetup()
+        //TODO ask what type of account they'd like to setup
+        await plaidAccountSetup()
     } else if (commands.hasOwnProperty(arg)) {
         commands[arg]()
     } else {

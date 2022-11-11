@@ -36,6 +36,10 @@ export interface PlaidAccountConfig extends BaseAccountConfig {
     token: string
 }
 
+export interface MxAccountConfig extends BaseAccountConfig {
+    
+}
+
 export interface CSVAccountConfig extends BaseAccountConfig {
     paths: string[]
     transformer: { [inputColumn: string]: keyof Transaction }
@@ -43,4 +47,4 @@ export interface CSVAccountConfig extends BaseAccountConfig {
     negateValues?: boolean
 }
 
-export type AccountConfig = PlaidAccountConfig | CSVAccountConfig
+export type AccountConfig = PlaidAccountConfig | CSVAccountConfig | MxAccountConfig

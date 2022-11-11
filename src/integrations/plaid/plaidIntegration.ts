@@ -175,12 +175,12 @@ export class PlaidIntegration {
     }
 
     public fetchPagedTransactions = async (
-        accountConfig: AccountConfig,
+        accountConfig: PlaidAccountConfig,
         startDate: Date,
         endDate: Date
     ): Promise<TransactionsResponse> => {
         return new Promise(async (resolve, reject) => {
-            accountConfig = accountConfig as PlaidAccountConfig
+            // accountConfig = accountConfig as PlaidAccountConfig
             try {
                 const dateFormat = 'yyyy-MM-dd'
                 const start = format(startDate, dateFormat)
@@ -202,7 +202,7 @@ export class PlaidIntegration {
         })
     }
 
-    public fetchAccount = async (accountConfig: AccountConfig, startDate: Date, endDate: Date): Promise<Account[]> => {
+    public fetchAccount = async (accountConfig: PlaidAccountConfig, startDate: Date, endDate: Date): Promise<Account[]> => {
         if (startDate < subMonths(new Date(), 5)) {
             logWarn('Transaction history older than 6 months may not be available for some institutions.', {})
         }

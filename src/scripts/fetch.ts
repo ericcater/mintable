@@ -2,12 +2,13 @@ import { getConfig } from '../common/config'
 import { PlaidIntegration } from '../integrations/plaid/plaidIntegration'
 import { GoogleIntegration } from '../integrations/google/googleIntegration'
 import { logInfo } from '../common/logging'
-import { Account } from '../types/account'
+import { Account, CSVAccountConfig, MxAccountConfig, PlaidAccountConfig } from '../types/account'
 import { IntegrationId } from '../types/integrations'
 import { parseISO, subMonths, startOfMonth } from 'date-fns'
 import { CSVImportIntegration } from '../integrations/csv-import/csvImportIntegration'
 import { CSVExportIntegration } from '../integrations/csv-export/csvExportIntegration'
 import { Transaction, TransactionRuleCondition, TransactionRule } from '../types/transaction'
+import { MxIntegration } from '../integrations/mx/mxIntegration'
 
 export default async () => {
     const config = getConfig()
@@ -30,12 +31,18 @@ export default async () => {
         switch (accountConfig.integration) {
             case IntegrationId.Plaid:
                 const plaid = new PlaidIntegration(config)
-                accounts = accounts.concat(await plaid.fetchAccount(accountConfig, startDate, endDate))
+                accounts = accounts.concat(await plaid.fetchAccount(accountConfig as PlaidAccountConfig, startDate, endDate))
                 break
+
+            case (IntegrationId.Mx):
+                const mx = new MxIntegration(config)
+                accounts = accounts.concat(await mx.fetchAccount(accountConfig as MxAccountConfig, startDate, endDate))
+                break
+            
 
             case IntegrationId.CSVImport:
                 const csv = new CSVImportIntegration(config)
-                accounts = accounts.concat(await csv.fetchAccount(accountConfig, startDate, endDate))
+                accounts = accounts.concat(await csv.fetchAccount(accountConfig as CSVAccountConfig, startDate, endDate))
                 break
 
             default:
