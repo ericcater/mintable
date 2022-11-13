@@ -227,7 +227,7 @@ export class PlaidIntegration {
 
         return this.fetchPagedTransactions(accountConfig, startDate, endDate)
             .then(data => {
-                let accounts: Account[] = data..accounts.map(account => ({
+                let accounts: Account[] = data.accounts.map(account => ({
                     integration: IntegrationId.Plaid,
                     accountId: account.account_id,
                     mask: account.mask,
