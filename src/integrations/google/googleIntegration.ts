@@ -74,9 +74,9 @@ export class GoogleIntegration {
     public getSheets = (documentId?: string): Promise<sheets_v4.Schema$Sheet[]> => {
         return this.sheets
             .get({ spreadsheetId: documentId || this.googleConfig.documentId })
-            .then(res => {
-                logInfo(`Fetched ${res.data.sheets.length} sheets.`, res.data.sheets)
-                return res.data.sheets
+            .then(({data}) => {
+                logInfo(`Fetched ${data.sheets.length} sheets.`, data.sheets)
+                return data.sheets
             })
             .catch(error => {
                 logError(`Error fetching sheets for spreadsheet ${this.googleConfig.documentId}.`, error)
@@ -116,9 +116,9 @@ export class GoogleIntegration {
                 spreadsheetId: this.googleConfig.documentId,
                 requestBody: { requests: [{ addSheet: { properties: { title } } }] }
             })
-            .then(res => {
-                logInfo(`Added sheet ${title}.`, res.data)
-                return res.data.replies[0].addSheet.properties
+            .then(({data}) => {
+                logInfo(`Added sheet ${title}.`, data)
+                return data.replies[0].addSheet.properties
             })
             .catch(error => {
                 logError(`Error adding sheet ${title}.`, error)
@@ -144,9 +144,9 @@ export class GoogleIntegration {
                     ]
                 }
             })
-            .then(res => {
-                logInfo(`Renamed sheet ${oldTitle} to ${newTitle}.`, res.data)
-                return res.data.replies
+            .then(({data}) => {
+                logInfo(`Renamed sheet ${oldTitle} to ${newTitle}.`, data)
+                return data.replies
             })
             .catch(error => {
                 logError(`Error renaming sheet ${oldTitle} to ${newTitle}.`, error)
@@ -435,7 +435,7 @@ export class GoogleIntegration {
                 spreadsheetId: this.googleConfig.documentId,
                 range: `${sheetTitle}!A:A`
             })
-            .then(res => res.data.values[res.data.values.length - 1][0])
+            .then(({data}) => data.values[data.values.length - 1][0])
 
         if (lastDate === date) {
             console.log('Day has been recorded')
@@ -448,7 +448,7 @@ export class GoogleIntegration {
                 spreadsheetId: this.googleConfig.documentId,
                 range: `${sheetTitle}!1:1`
             })
-            .then(res => res.data.values[0])
+            .then(({data}) => data.values[0])
 
         const missingIds = ids.filter(id => !idsFromSheet.includes(id))
 
@@ -481,9 +481,9 @@ export class GoogleIntegration {
         const existingData = await this.sheets.values.get({
             spreadsheetId: this.googleConfig.documentId,
             range: existingDataRange
-        })
+        }).then(({data}) => data)
 
-        const numRows = existingData.data.values ? existingData.data.values.length : 0
+        const numRows = existingData.values ? existingData.values.length : 0
         //#endregion get existing data
 
         const newDataRange: Range = {

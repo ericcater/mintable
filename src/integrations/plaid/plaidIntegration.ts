@@ -107,9 +107,9 @@ export class PlaidIntegration {
                     const accountConfig: PlaidAccountConfig = this.config.accounts[accountId] as PlaidAccountConfig
                     if (accountConfig.integration === IntegrationId.Plaid) {
                         try {
-                            await this.client.accountsGet({ access_token: accountConfig.token }).then(resp => {
+                            await this.client.accountsGet({ access_token: accountConfig.token }).then(({data}) => {
                                 accounts.push({
-                                    name: resp.data.accounts[0].name,
+                                    name: data.accounts[0].name,
                                     token: accountConfig.token
                                 })
                             })
@@ -135,10 +135,10 @@ export class PlaidIntegration {
                     language: 'en' // TODO
                 }
 
-                const result = await this.client.linkTokenCreate(options)
+                const result = await this.client.linkTokenCreate(options).then(({data}) => data)
 
-                res.json({ link_token: result.data.link_token })
-                // console.log(result.data.link_token)
+                res.json({ link_token: result.link_token })
+                // console.log(result.link_token)
             })
             app.post('/remove', async (req, res) => {
                 try {
@@ -194,10 +194,10 @@ export class PlaidIntegration {
             }
 
             try {
-                const response = await this.client.transactionsGet(request)
+                const response = await this.client.transactionsGet(request).then(({data}) => data)
 
-                let transactions = response.data.transactions
-                const total_transactions = response.data.total_transactions
+                let transactions = response.transactions
+                const total_transactions = response.total_transactions
                 // Manipulate the offset parameter to paginate
                 // transactions and retrieve all available data
 
@@ -209,10 +209,10 @@ export class PlaidIntegration {
                         }
                     }
 
-                    const paginatedResponse = await this.client.transactionsGet(paginatedRequest)
-                    transactions = transactions.concat(paginatedResponse.data.transactions)
+                    const paginatedResponse = await this.client.transactionsGet(paginatedRequest).then(({data}) => data)
+                    transactions = transactions.concat(paginatedResponse.transactions)
                 }
-                return resolve({ accounts: response.data.accounts, transactions: transactions })
+                return resolve({ accounts: response.accounts, transactions: transactions })
             } catch (e) {
                 // console.log(e)
                 return reject(e)
@@ -227,7 +227,7 @@ export class PlaidIntegration {
 
         return this.fetchPagedTransactions(accountConfig, startDate, endDate)
             .then(data => {
-                let accounts: Account[] = data.accounts.map(account => ({
+                let accounts: Account[] = data..accounts.map(account => ({
                     integration: IntegrationId.Plaid,
                     accountId: account.account_id,
                     mask: account.mask,
