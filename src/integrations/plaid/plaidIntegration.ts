@@ -9,7 +9,8 @@ import plaid, {
     PlaidApi,
     PlaidEnvironments,
     Products,
-    TransactionsGetRequest
+    TransactionsGetRequest,
+    InvestmentsHoldingsGetRequest
 } from 'plaid'
 import { Config, updateConfig } from '../../common/config'
 import { PlaidConfig, PlaidEnvironmentType } from '../../types/integrations/plaid'
@@ -45,7 +46,7 @@ export class PlaidIntegration {
                 headers: {
                     'PLAID-CLIENT-ID': this.plaidConfig.credentials.clientId,
                     'PLAID-SECRET': this.plaidConfig.credentials.secret,
-                    'Plaid-Version': '2020-09-14',
+                    'Plaid-Version': '2020-09-14'
                 }
             }
         })
@@ -107,7 +108,7 @@ export class PlaidIntegration {
                     const accountConfig: PlaidAccountConfig = this.config.accounts[accountId] as PlaidAccountConfig
                     if (accountConfig.integration === IntegrationId.Plaid) {
                         try {
-                            await this.client.accountsGet({ access_token: accountConfig.token }).then(({data}) => {
+                            await this.client.accountsGet({ access_token: accountConfig.token }).then(({ data }) => {
                                 accounts.push({
                                     name: data.accounts[0].name,
                                     token: accountConfig.token
@@ -135,7 +136,7 @@ export class PlaidIntegration {
                     language: 'en' // TODO
                 }
 
-                const result = await this.client.linkTokenCreate(options).then(({data}) => data)
+                const result = await this.client.linkTokenCreate(options).then(({ data }) => data)
 
                 res.json({ link_token: result.link_token })
                 // console.log(result.link_token)
@@ -194,7 +195,7 @@ export class PlaidIntegration {
             }
 
             try {
-                const response = await this.client.transactionsGet(request).then(({data}) => data)
+                const response = await this.client.transactionsGet(request).then(({ data }) => data)
 
                 let transactions = response.transactions
                 const total_transactions = response.total_transactions
@@ -209,10 +210,35 @@ export class PlaidIntegration {
                         }
                     }
 
-                    const paginatedResponse = await this.client.transactionsGet(paginatedRequest).then(({data}) => data)
+                    const paginatedResponse = await this.client
+                        .transactionsGet(paginatedRequest)
+                        .then(({ data }) => data)
                     transactions = transactions.concat(paginatedResponse.transactions)
                 }
                 return resolve({ accounts: response.accounts, transactions: transactions })
+            } catch (e) {
+                // console.log(e)
+                return reject(e)
+            }
+        })
+    }
+
+    public fetchHoldings = async (accountConfig: AccountConfig): Promise<any> => {
+        return new Promise(async (resolve, reject) => {
+            accountConfig = accountConfig as PlaidAccountConfig
+
+            const request: InvestmentsHoldingsGetRequest = {
+                access_token: accountConfig.token
+            }
+
+            try {
+                const response = await this.client.investmentsHoldingsGet(request).then(({ data }) => data)
+
+                let holdings = response.holdings
+                let securities = response.securities
+                let accounts = response.accounts
+
+                return resolve({ accounts, holdings })
             } catch (e) {
                 // console.log(e)
                 return reject(e)
@@ -227,7 +253,7 @@ export class PlaidIntegration {
 
         return this.fetchPagedTransactions(accountConfig, startDate, endDate)
             .then(data => {
-                let accounts: Account[] = data..accounts.map(account => ({
+                let accounts: Account[] = data.accounts.map(account => ({
                     integration: IntegrationId.Plaid,
                     accountId: account.account_id,
                     mask: account.mask,
@@ -282,5 +308,10 @@ export class PlaidIntegration {
                 logError(`Error fetching account ${accountConfig.id}.`, error)
                 return []
             })
+    }
+
+    public fetchAccountHoldings = async (accountConfig: AccountConfig): Promise<Account[]> => {
+        const accounts: Account[] = []
+        return accounts
     }
 }

@@ -1,3 +1,4 @@
+import { Holdings as Holding } from './holdings'
 import { IntegrationId } from './integrations'
 import { Transaction } from './transaction'
 
@@ -25,6 +26,8 @@ export interface Account {
 
     // transaction list
     transactions?: Transaction[]
+
+    holdings?: Holding[]
 }
 
 export interface BaseAccountConfig {
