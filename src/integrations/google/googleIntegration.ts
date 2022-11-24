@@ -332,15 +332,21 @@ export class GoogleIntegration {
 
         const columnHeaders = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
-        const range = {
+        const writeRange = {
             sheet: sheetTitle,
             start: `A1`,
             end: `${columnHeaders[columns.length > 0 ? columns.length - 1 : 1]}${rows.length + 1}`
         }
+
+        const clearRange = {
+            sheet: sheetTitle,
+            start: `A1`,
+            end: 'H19' //TODO will have to change this if more than 19 accounts
+        }
         const data = [columns].concat(rows.map(row => this.getRowWithDefaults(row, columns)))
 
-        await this.clearRanges(clearEntireSheet === true ? [{ sheet: sheetTitle }] : [range])
-        return this.updateRanges([{ range, data }])
+        await this.clearRanges(clearEntireSheet === true ? [{ sheet: sheetTitle }] : [clearRange])
+        return this.updateRanges([{ range: writeRange, data }])
     }
 
     public updateTransactions = async (accounts: Account[], writeToOneSheet?: boolean) => {
