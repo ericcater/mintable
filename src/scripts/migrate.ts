@@ -116,6 +116,10 @@ export default () => {
                 integration: IntegrationId.Google,
                 properties: transactionColumns.concat(oldConfig['REFERENCE_COLUMNS'])
             },
+            investmentTransactions:{
+                integration: IntegrationId.Google,
+                properties: []
+            },
             holdings: {
                 integration: IntegrationId.Google,
                 properties: []

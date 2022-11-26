@@ -11,6 +11,7 @@ import Ajv from 'ajv'
 import { BalanceConfig } from '../types/balance'
 import { jsonc } from 'jsonc'
 import { HoldingConfig } from '../types/holdings'
+import { InvestmentTransactionConfig } from '../types/investmentTransaction'
 
 const DEFAULT_CONFIG_FILE = '~/mintable.jsonc'
 const DEFAULT_CONFIG_VAR = 'MINTABLE_CONFIG'
@@ -20,6 +21,10 @@ const DEFAULT_CONFIG: Config = {
     transactions: {
         integration: IntegrationId.Google,
         properties: ['date', 'amount', 'name', 'account', 'category']
+    },
+    investmentTransactions: {
+        integration: IntegrationId.Google,
+        properties: []
     },
     holdings: {
         integration: IntegrationId.Google,
@@ -48,6 +53,7 @@ export interface Config {
     integrations: { [id: string]: IntegrationConfig }
     accounts: { [id: string]: AccountConfig }
     transactions: TransactionConfig
+    investmentTransactions : InvestmentTransactionConfig,
     holdings: HoldingConfig
     balances: BalanceConfig
 }

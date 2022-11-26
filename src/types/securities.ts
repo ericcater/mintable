@@ -1,5 +1,5 @@
 export interface Holdings {
-    account_id: string
+    accountId: string
     cost_basis: number
     institution_price: number
     institution_price_as_of: Date

@@ -15,7 +15,7 @@ export default async () => {
     // Start date to fetch transactions, default to 2 months of history
     let startDate = config.transactions.startDate
         ? parseISO(config.transactions.startDate)
-        : startOfMonth(subMonths(new Date(), 2))
+        : startOfMonth(subMonths(new Date(), 200))
 
     // End date to fetch transactions in YYYY-MM-DD format, default to current date
     let endDate = config.transactions.endDate ? parseISO(config.transactions.endDate) : new Date()
@@ -36,9 +36,22 @@ export default async () => {
 
                 switch (accountConfig.type) {
                     case AccountTypes.Invesment:
-                        accounts = accounts.concat(await plaid.fetchACcountWithHoldings(accountConfig))
+                        const accountHoldings = await plaid.fetchAccountWithHoldings(accountConfig)
+                        const accountInvestmentTransactions = await plaid.fetchAccountWithInvestmentTransactions(
+                            accountConfig,
+                            startDate,
+                            endDate
+                        )
+
+                        accountHoldings.forEach(holding => {
+                            accountInvestmentTransactions.find(
+                                account => account.accountId === holding.accountId
+                            ).holdings = holding.holdings
+                        })
+
+                        accounts = accounts.concat(accountInvestmentTransactions)
                         break
-                    case AccountTypes.Transaction:
+                    case AccountTypes.Transactional:
                     default:
                         accounts = accounts.concat(
                             await plaid.fetchAccountWithTransactions(accountConfig, startDate, endDate)
@@ -66,43 +79,43 @@ export default async () => {
 
     const totalTransactions = numTransactions()
 
-    const transactionMatchesRule = (transaction: Transaction, rule: TransactionRule): boolean => {
-        return rule.conditions
-            .map(condition => new RegExp(condition.pattern, condition.flags).test(transaction[condition.property]))
-            .every(condition => condition === true)
-    }
+    // const transactionMatchesRule = (transaction: Transaction, rule: TransactionRule): boolean => {
+    //     return rule.conditions
+    //         .map(condition => new RegExp(condition.pattern, condition.flags).test(transaction[condition.property]))
+    //         .every(condition => condition === true)
+    // }
 
-    // Transaction Rules
-    if (config.transactions.rules) {
-        let countOverridden = 0
+    // // Transaction Rules
+    // if (config.transactions.rules) {
+    //     let countOverridden = 0
 
-        accounts = accounts.map(account => ({
-            ...account,
-            transactions: account.transactions
-                .map(transaction => {
-                    config.transactions.rules.forEach(rule => {
-                        if (transaction && transactionMatchesRule(transaction, rule)) {
-                            if (rule.type === 'filter') {
-                                transaction = undefined
-                            }
-                            if (rule.type === 'override' && transaction.hasOwnProperty(rule.property)) {
-                                transaction[rule.property] = (transaction[rule.property].toString() as String).replace(
-                                    new RegExp(rule.findPattern, rule.flags),
-                                    rule.replacePattern
-                                )
-                                countOverridden += 1
-                            }
-                        }
-                    })
+    //     accounts = accounts.map(account => ({
+    //         ...account,
+    //         transactions: account.transactions
+    //             .map(transaction => {
+    //                 config.transactions.rules.forEach(rule => {
+    //                     if (transaction && transactionMatchesRule(transaction, rule)) {
+    //                         if (rule.type === 'filter') {
+    //                             transaction = undefined
+    //                         }
+    //                         if (rule.type === 'override' && transaction.hasOwnProperty(rule.property)) {
+    //                             transaction[rule.property] = (transaction[rule.property].toString() as String).replace(
+    //                                 new RegExp(rule.findPattern, rule.flags),
+    //                                 rule.replacePattern
+    //                             )
+    //                             countOverridden += 1
+    //                         }
+    //                     }
+    //                 })
 
-                    return transaction
-                })
-                .filter(transaction => transaction !== undefined)
-        }))
+    //                 return transaction
+    //             })
+    //             .filter(transaction => transaction !== undefined)
+    //     }))
 
-        logInfo(`${numTransactions()} transactions out of ${totalTransactions} total transactions matched filters.`)
-        logInfo(`${countOverridden} out of ${totalTransactions} total transactions overridden.`)
-    }
+    //     logInfo(`${numTransactions()} transactions out of ${totalTransactions} total transactions matched filters.`)
+    //     logInfo(`${countOverridden} out of ${totalTransactions} total transactions overridden.`)
+    // }
 
     switch (config.balances.integration) {
         case IntegrationId.Google:
@@ -120,8 +133,10 @@ export default async () => {
     switch (config.transactions.integration) {
         case IntegrationId.Google:
             const google = new GoogleIntegration(config)
-            await google.updateTransactions(accounts.filter(account => account.transactions))
+            await google.updateTransactions(accounts, AccountTypes.Transactional)
             await google.updateHoldings(accounts.filter(account => account.holdings))
+            await google.updateTransactions(accounts, AccountTypes.Invesment)
+
             break
         case IntegrationId.CSVExport:
             const csv = new CSVExportIntegration(config)

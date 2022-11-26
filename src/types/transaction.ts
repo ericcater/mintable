@@ -1,6 +1,7 @@
+import { TransactionBase } from './account'
 import { IntegrationId } from './integrations'
 
-export interface Transaction {
+export interface Transaction extends TransactionBase{
     // where this transaction's information came from
     integration: IntegrationId
 
@@ -20,9 +21,9 @@ export interface Transaction {
     // an account has a number associated to it (e.g. Sapphire Reserve Credit Card)
     account?: string
     // unique identifier for this account
-    accountId?: string
+    accountId: string
     // unique identifier for this transaction
-    transactionId?: string
+    transactionId: string
 
     // industry or merchant category (e.g. Entertainment)
     category?: string

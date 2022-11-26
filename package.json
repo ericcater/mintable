@@ -10,7 +10,8 @@
         "watch": "tsc --watch",
         "lint": "prettier --check ./src/**/*.js ./src/**/*.html ./src/**/*.ts ./docs/**/*.json",
         "lint-fix": "prettier --write ./src/**/*.js ./src/**/*.html ./src/**/*.ts ./docs/**/*.json",
-        "test": "npm run build && npm run lint"
+        "test": "npm run build && npm run lint",
+        "debug": "ts-node ./src/scripts/cli.ts"
     },
     "files": [
         "src",
@@ -47,7 +48,8 @@
         "@types/express-serve-static-core": "4.17.30"
     },
     "devDependencies": {
-        "prettier": "^1.16.4"
+        "prettier": "^1.16.4",
+        "ts-node": "^10.9.1"
     },
     "description": "Automate your personal finances – for free, with no ads, and no data collection.",
     "repository": {

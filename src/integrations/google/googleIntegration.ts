@@ -4,7 +4,7 @@ import { IntegrationId } from '../../types/integrations'
 import { GoogleConfig } from '../../types/integrations/google'
 import { OAuth2Client, Credentials } from 'google-auth-library'
 import { logInfo, logError } from '../../common/logging'
-import { Account } from '../../types/account'
+import { Account, AccountTypes } from '../../types/account'
 import { sortBy, groupBy } from 'lodash'
 import { startOfMonth, format, formatISO, parseISO } from 'date-fns'
 
@@ -73,19 +73,19 @@ export class GoogleIntegration {
 
     public getSheets = (documentId?: string): Promise<sheets_v4.Schema$Sheet[]> => {
         return this.sheets
-            .get({ spreadsheetId: documentId || this.googleConfig.documentId })
+            .get({ spreadsheetId: documentId || this.googleConfig.documentId[0] })
             .then(({ data }) => {
                 logInfo(`Fetched ${data.sheets.length} sheets.`, data.sheets)
                 return data.sheets
             })
             .catch(error => {
-                logError(`Error fetching sheets for spreadsheet ${this.googleConfig.documentId}`, error)
+                logError(`Error fetching sheets for spreadsheet ${this.googleConfig.documentId[0]}`, error)
                 return []
             })
     }
 
     public copySheet = async (title: string, sourceDocumentId?: string): Promise<sheets_v4.Schema$SheetProperties> => {
-        const sheets = await this.getSheets(sourceDocumentId || this.googleConfig.documentId)
+        const sheets = await this.getSheets(sourceDocumentId || this.googleConfig.documentId[0])
         let sourceSheetId
 
         try {
@@ -96,9 +96,9 @@ export class GoogleIntegration {
 
         return this.sheets.sheets
             .copyTo({
-                spreadsheetId: sourceDocumentId || this.googleConfig.documentId,
+                spreadsheetId: sourceDocumentId || this.googleConfig.documentId[0],
                 sheetId: sourceSheetId,
-                requestBody: { destinationSpreadsheetId: this.googleConfig.documentId }
+                requestBody: { destinationSpreadsheetId: this.googleConfig.documentId[0] }
             })
             .then(res => {
                 logInfo(`Copied sheet ${title}`, res.data)
@@ -110,10 +110,10 @@ export class GoogleIntegration {
             })
     }
 
-    public addSheet = (title: string): Promise<sheets_v4.Schema$SheetProperties> => {
+    public addSheet = (title: string, documentId?: string): Promise<sheets_v4.Schema$SheetProperties> => {
         return this.sheets
             .batchUpdate({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: documentId || this.googleConfig.documentId[0],
                 requestBody: { requests: [{ addSheet: { properties: { title } } }] }
             })
             .then(({ data }) => {
@@ -126,13 +126,17 @@ export class GoogleIntegration {
             })
     }
 
-    public renameSheet = async (oldTitle: string, newTitle: string): Promise<sheets_v4.Schema$Response[]> => {
-        const sheets = await this.getSheets()
+    public renameSheet = async (
+        oldTitle: string,
+        newTitle: string,
+        documentId?: string
+    ): Promise<sheets_v4.Schema$Response[]> => {
+        const sheets = await this.getSheets(documentId || this.googleConfig.documentId[0])
         const sheetId = sheets.find(sheet => sheet.properties.title === oldTitle).properties.sheetId
 
         return this.sheets
             .batchUpdate({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: documentId || this.googleConfig.documentId[0],
                 requestBody: {
                     requests: [
                         {
@@ -170,11 +174,11 @@ export class GoogleIntegration {
 
     public translateRanges = (ranges: Range[]): string[] => ranges.map(this.translateRange)
 
-    public clearRanges = (ranges: Range[]): Promise<sheets_v4.Schema$BatchClearValuesResponse> => {
+    public clearRanges = (ranges: Range[], documentId?: string): Promise<sheets_v4.Schema$BatchClearValuesResponse> => {
         const translatedRanges = this.translateRanges(ranges)
         return this.sheets.values
             .batchClear({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: documentId || this.googleConfig.documentId[0],
                 requestBody: { ranges: translatedRanges }
             })
             .then(res => {
@@ -187,14 +191,17 @@ export class GoogleIntegration {
             })
     }
 
-    public updateRanges = (dataRanges: DataRange[]): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> => {
+    public updateRanges = (
+        dataRanges: DataRange[],
+        documentId?: string
+    ): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> => {
         const data = dataRanges.map(dataRange => ({
             range: this.translateRange(dataRange.range),
             values: dataRange.data
         }))
         return this.sheets.values
             .batchUpdate({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: documentId || this.googleConfig.documentId[0],
                 requestBody: {
                     valueInputOption: `USER_ENTERED`,
                     data: data
@@ -210,13 +217,13 @@ export class GoogleIntegration {
             })
     }
 
-    public sortSheets = async (): Promise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> => {
-        const sheets = await this.getSheets()
+    public sortSheets = async (documentId?: string): Promise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> => {
+        const sheets = await this.getSheets(documentId || this.googleConfig.documentId[0])
         const ordered = sortBy(sheets, sheet => sheet.properties.title).reverse()
 
         return this.sheets
             .batchUpdate({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: documentId || this.googleConfig.documentId[0],
                 requestBody: {
                     requests: ordered.map((sheet, i) => ({
                         updateSheetProperties: {
@@ -236,12 +243,12 @@ export class GoogleIntegration {
             })
     }
 
-    public formatSheets = async (): Promise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> => {
-        const sheets = await this.getSheets()
+    public formatSheets = async (documentId?: string): Promise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> => {
+        const sheets = await this.getSheets(documentId || this.googleConfig.documentId[0])
 
         return this.sheets
             .batchUpdate({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: documentId || this.googleConfig.documentId[0],
                 requestBody: {
                     requests: sheets
                         .map(sheet => [
@@ -311,20 +318,22 @@ export class GoogleIntegration {
         rows: { [key: string]: any }[],
         columns?: string[],
         useTemplate?: boolean,
-        clearEntireSheet?: boolean
+        clearEntireSheet?: boolean,
+        documentId?: string
     ): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> => {
-        const sheets = await this.getSheets()
+        documentId = documentId || this.googleConfig.documentId[0]
+        const sheets = await this.getSheets(documentId)
         const existing = sheets.find(sheet => sheet.properties.title === sheetTitle)
 
         if (existing === undefined) {
             if (this.googleConfig.template && useTemplate === true) {
                 const copied = await this.copySheet(
                     this.googleConfig.template.sheetTitle,
-                    this.googleConfig.template.documentId
+                    documentId || this.googleConfig.template.documentId
                 )
-                await this.renameSheet(copied.title, sheetTitle)
+                await this.renameSheet(copied.title, sheetTitle, documentId)
             } else {
-                await this.addSheet(sheetTitle)
+                await this.addSheet(sheetTitle, documentId)
             }
         }
 
@@ -345,19 +354,38 @@ export class GoogleIntegration {
         }
         const data = [columns].concat(rows.map(row => this.getRowWithDefaults(row, columns)))
 
-        await this.clearRanges(clearEntireSheet === true ? [{ sheet: sheetTitle }] : [clearRange])
-        return this.updateRanges([{ range: writeRange, data }])
+        await this.clearRanges(clearEntireSheet === true ? [{ sheet: sheetTitle }] : [clearRange], documentId)
+        return this.updateRanges([{ range: writeRange, data }], documentId)
     }
 
-    public updateTransactions = async (accounts: Account[], writeToOneSheet?: boolean) => {
+    public updateTransactions = async (accounts: Account[], type: AccountTypes, writeToOneSheet?: boolean) => {
+        accounts = accounts.filter(account => account.accountType === type)
+
+        if(accounts.length ===0){
+            return;
+        }
+        let properties
+        let documentId
+
+        switch (type) {
+            case AccountTypes.Invesment:
+                properties = this.config.investmentTransactions.properties
+                documentId = this.googleConfig.documentId[1]
+                break
+            case AccountTypes.Transactional:
+            default:
+                properties = this.config.transactions.properties
+                documentId = this.googleConfig.documentId[0]
+                break
+        }
+
         // Sort transactions by date
         const transactions = sortBy(accounts.map(account => account.transactions).flat(10), 'date')
 
         //Not terribly useful in currently since anything that isn't fetched this run is overwritten
         if (writeToOneSheet) {
-            await this.updateSheet('AllTest', transactions, this.config.transactions.properties, true, true)
+            await this.updateSheet('AllTest', transactions, properties, true, true, documentId)
         } else {
-            // Split transactions by month
             const groupedTransactions = groupBy(transactions, transaction => formatISO(startOfMonth(transaction.date)))
 
             // Write transactions by month, copying template sheet if necessary
@@ -365,36 +393,73 @@ export class GoogleIntegration {
                 await this.updateSheet(
                     format(parseISO(month), this.googleConfig.dateFormat || 'yyyy.MM'),
                     groupedTransactions[month],
-                    this.config.transactions.properties,
+                    properties,
                     true,
-                    true
+                    true,
+                    documentId
                 )
             }
         }
         // Sort Sheets
-        await this.sortSheets()
+        await this.sortSheets(documentId)
+
+        // Format, etc.
+        // await this.formatSheets(documentId)
+    }
+
+    public updateInvestmentTransactions = async (accounts: Account[], writeToOneSheet?: boolean) => {
+        const documentId = this.googleConfig.documentId[1]
+
+        // Sort transactions by date
+        const investmentTransactions = sortBy(accounts.map(account => account.transactions).flat(10), 'date')
+
+        //Not terribly useful in currently since anything that isn't fetched this run is overwritten
+        if (writeToOneSheet) {
+            await this.updateSheet(
+                'AllTest',
+                investmentTransactions,
+                this.config.investmentTransactions.properties,
+                true,
+                true,
+                documentId
+            )
+        } else {
+            // Split transactions by month
+            const groupedTransactions = groupBy(investmentTransactions, transaction =>
+                formatISO(startOfMonth(transaction.date))
+            )
+
+            // Write transactions by month, copying template sheet if necessary
+            for (const month in groupedTransactions) {
+                await this.updateSheet(
+                    format(parseISO(month), this.googleConfig.dateFormat || 'yyyy.MM'),
+                    groupedTransactions[month],
+                    this.config.investmentTransactions.properties,
+                    true,
+                    true,
+                    documentId
+                )
+            }
+        }
+        // Sort Sheets
+        await this.sortSheets(documentId)
 
         // Format, etc.
         // await this.formatSheets()
-
-        logInfo('You can view your sheet here:\n')
-        console.log(`https://docs.google.com/spreadsheets/d/${this.googleConfig.documentId}`)
     }
 
     public updateHoldings = async (accounts: Account[]) => {
+        const documentId = this.googleConfig.documentId[1]
         // Sort transactions by date
         const holdings = accounts.map(account => account.holdings).flat(10)
 
-        await this.updateSheet('Investments', holdings, this.config.holdings.properties, true, true)
+        await this.updateSheet('Investments', holdings, this.config.holdings.properties, true, true, documentId)
 
         // Sort Sheets
-        await this.sortSheets()
+        await this.sortSheets(documentId)
 
         // Format, etc.
         // await this.formatSheets()
-
-        logInfo('You can view your sheet here:\n')
-        console.log(`https://docs.google.com/spreadsheets/d/${this.googleConfig.documentId}`)
     }
 
     public updateBalances = async (accounts: Account[]) => {
@@ -408,9 +473,6 @@ export class GoogleIntegration {
 
         // Format, etc.
         // await this.formatSheets()
-
-        logInfo('You can view your sheet here:\n')
-        console.log(`https://docs.google.com/spreadsheets/d/${this.googleConfig.documentId}`)
     }
 
     public balanceHistory = async (sheetTitle: string, accounts: Account[], useTemplate?: boolean) => {
@@ -454,7 +516,7 @@ export class GoogleIntegration {
         //#region check if this day has been done
         const lastDate = await this.sheets.values
             .get({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: this.googleConfig.documentId[0],
                 range: `${sheetTitle}!A:A`
             })
             .then(({ data }) => data.values[data.values.length - 1][0])
@@ -467,7 +529,7 @@ export class GoogleIntegration {
 
         let idsFromSheet = await this.sheets.values
             .get({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: this.googleConfig.documentId[0],
                 range: `${sheetTitle}!1:1`
             })
             .then(({ data }) => data.values[0])
@@ -502,7 +564,7 @@ export class GoogleIntegration {
 
         const existingData = await this.sheets.values
             .get({
-                spreadsheetId: this.googleConfig.documentId,
+                spreadsheetId: this.googleConfig.documentId[0],
                 range: existingDataRange
             })
             .then(({ data }) => data)
@@ -516,7 +578,7 @@ export class GoogleIntegration {
             end: `${columnHeaders[row.length > 0 ? row.length - 1 : 1]}${numRows + rowOffset}`
         }
 
-        console.log("Recorded new day in history")
+        console.log('Recorded new day in history')
 
         return this.updateRanges([{ range: newDataRange, data: [row] }])
     }

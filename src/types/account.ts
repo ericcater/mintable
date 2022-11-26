@@ -1,10 +1,12 @@
 import { Holdings as Holding } from './holdings'
-import { IntegrationId } from './integrations'
+import { IntegrationId, IntegrationType } from './integrations'
 import { Transaction } from './transaction'
-
+import { InvestmentTransaction } from './investmentTransaction'
 export interface Account {
     // where this account's information came from
     integration: IntegrationId
+
+    accountType?: AccountTypes
 
     // unique identifier for this account
     accountId?: string
@@ -25,14 +27,23 @@ export interface Account {
     currency?: string
 
     // transaction list
-    transactions?: Transaction[]
+    transactions?: TransactionBase[]
 
     holdings?: Holding[]
 }
 
+export type TransactionBase = {
+    integration: IntegrationId,
+    transactionId: string
+    accountId: string
+    amount: number
+    date : Date
+    name: string,
+}
+
 export enum AccountTypes {
     Invesment = 'Investment',
-    Transaction = 'Transaction'
+    Transactional = 'Transactional'
 }
 
 export interface BaseAccountConfig {

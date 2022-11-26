@@ -22,7 +22,7 @@ export interface GoogleConfig extends BaseIntegrationConfig {
   type: IntegrationType.Export
 
   credentials: GoogleCredentials
-  documentId: string
+  documentId: string[]
   
   dateFormat?: string
 
@@ -40,5 +40,5 @@ export const defaultGoogleConfig: GoogleConfig = {
     redirectUri: 'urn:ietf:wg:oauth:2.0:oob',
     scope: ['https://www.googleapis.com/auth/spreadsheets'],
   },
-  documentId: ''
+  documentId: ['']
 }

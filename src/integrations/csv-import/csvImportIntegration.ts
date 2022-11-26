@@ -1,7 +1,7 @@
 import { Config } from '../../common/config'
 import { IntegrationId } from '../../types/integrations'
 import { logInfo, logError, logWarn } from '../../common/logging'
-import { AccountConfig, Account, CSVAccountConfig } from '../../types/account'
+import { AccountConfig, Account, CSVAccountConfig, TransactionBase } from '../../types/account'
 import { Transaction } from '../../types/transaction'
 import { CSVImportConfig } from '../../types/integrations/csv-import'
 import glob from 'glob'
@@ -45,7 +45,7 @@ export class CSVImportIntegration {
                                     skip_empty_lines: true
                                 })
 
-                                const transactions: Transaction[] = rows.map(inputRow => {
+                                const transactions: TransactionBase[] = rows.map(inputRow => {
                                     const outputRow = {} as Transaction
 
                                     Object.keys(CSVAccountConfig.transformer).map(inputColumn => {

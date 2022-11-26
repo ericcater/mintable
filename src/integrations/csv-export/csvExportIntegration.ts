@@ -1,7 +1,7 @@
 import { Config } from '../../common/config'
 import { IntegrationId } from '../../types/integrations'
 import { logInfo, logError } from '../../common/logging'
-import { Account } from '../../types/account'
+import { Account, TransactionBase } from '../../types/account'
 import { Transaction } from '../../types/transaction'
 import { CSVExportConfig } from '../../types/integrations/csv-export'
 import { writeFileSync } from 'fs'
@@ -19,7 +19,7 @@ export class CSVExportIntegration {
 
     public updateTransactions = async (accounts: Account[]) => {
         try {
-            const transactions: Transaction[] = accounts.map(account => account.transactions).flat(10)
+            const transactions: TransactionBase[] = accounts.map(account => account.transactions).flat(10)
 
             // Format Dates
             const output = transactions.map(transaction => ({
