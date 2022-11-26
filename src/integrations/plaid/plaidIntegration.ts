@@ -86,11 +86,11 @@ export class PlaidIntegration {
             let server: http.Server
 
             app.post('/get_access_token', (req, res) => {
-                // console.log(req.body.public_token)
+                console.log(req.body.public_token)
                 if (req.body.public_token !== undefined) {
                     client.itemPublicTokenExchange({ public_token: req.body.public_token }).then(res => {
                         this.savePublicToken(res.data)
-                        // console.log(res.data)
+                        console.log(res.data)
                         resolve(logInfo('Plaid access token saved.', req.body))
                     })
                 } else if (req.body.exit !== undefined) {
