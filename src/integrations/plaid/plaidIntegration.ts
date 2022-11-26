@@ -9,7 +9,8 @@ import plaid, {
     PlaidApi,
     PlaidEnvironments,
     Products,
-    TransactionsGetRequest
+    TransactionsGetRequest,
+    InvestmentsHoldingsGetRequest
 } from 'plaid'
 import { Config, updateConfig } from '../../common/config'
 import { PlaidConfig, PlaidEnvironmentType } from '../../types/integrations/plaid'
@@ -20,6 +21,7 @@ import { logInfo, logError, logWarn } from '../../common/logging'
 import http from 'http'
 import { AccountConfig, Account, PlaidAccountConfig } from '../../types/account'
 import { Transaction } from '../../types/transaction'
+import { Holdings } from '../../types/holdings'
 
 const PLAID_USER_ID = 'LOCAL'
 
@@ -45,7 +47,7 @@ export class PlaidIntegration {
                 headers: {
                     'PLAID-CLIENT-ID': this.plaidConfig.credentials.clientId,
                     'PLAID-SECRET': this.plaidConfig.credentials.secret,
-                    'Plaid-Version': '2020-09-14',
+                    'Plaid-Version': '2020-09-14'
                 }
             }
         })
@@ -107,7 +109,7 @@ export class PlaidIntegration {
                     const accountConfig: PlaidAccountConfig = this.config.accounts[accountId] as PlaidAccountConfig
                     if (accountConfig.integration === IntegrationId.Plaid) {
                         try {
-                            await this.client.accountsGet({ access_token: accountConfig.token }).then(({data}) => {
+                            await this.client.accountsGet({ access_token: accountConfig.token }).then(({ data }) => {
                                 accounts.push({
                                     name: data.accounts[0].name,
                                     token: accountConfig.token
@@ -135,7 +137,7 @@ export class PlaidIntegration {
                     language: 'en' // TODO
                 }
 
-                const result = await this.client.linkTokenCreate(options).then(({data}) => data)
+                const result = await this.client.linkTokenCreate(options).then(({ data }) => data)
 
                 res.json({ link_token: result.link_token })
                 // console.log(result.link_token)
@@ -194,7 +196,7 @@ export class PlaidIntegration {
             }
 
             try {
-                const response = await this.client.transactionsGet(request).then(({data}) => data)
+                const response = await this.client.transactionsGet(request).then(({ data }) => data)
 
                 let transactions = response.transactions
                 const total_transactions = response.total_transactions
@@ -209,7 +211,9 @@ export class PlaidIntegration {
                         }
                     }
 
-                    const paginatedResponse = await this.client.transactionsGet(paginatedRequest).then(({data}) => data)
+                    const paginatedResponse = await this.client
+                        .transactionsGet(paginatedRequest)
+                        .then(({ data }) => data)
                     transactions = transactions.concat(paginatedResponse.transactions)
                 }
                 return resolve({ accounts: response.accounts, transactions: transactions })
@@ -220,10 +224,37 @@ export class PlaidIntegration {
         })
     }
 
-    public fetchAccount = async (accountConfig: AccountConfig, startDate: Date, endDate: Date): Promise<Account[]> => {
-        if (startDate < subMonths(new Date(), 5)) {
-            logWarn('Transaction history older than 6 months may not be available for some institutions.', {})
-        }
+    public fetchHoldings = async (
+        accountConfig: AccountConfig
+    ): Promise<{ accounts: AccountBase[]; holdings: plaid.Holding[]; securities: plaid.Security[] }> => {
+        return new Promise(async (resolve, reject) => {
+            accountConfig = accountConfig as PlaidAccountConfig
+
+            const request: InvestmentsHoldingsGetRequest = {
+                access_token: accountConfig.token
+            }
+
+            try {
+                const response = await this.client.investmentsHoldingsGet(request).then(({ data }) => data)
+
+                let holdings = response.holdings
+                let securities = response.securities
+                let accounts = response.accounts
+
+                return resolve({ accounts, holdings, securities })
+            } catch (e) {
+                // console.log(e)
+                return reject(e)
+            }
+        })
+    }
+
+    public fetchAccountWithTransactions = async (
+        accountConfig: AccountConfig,
+        startDate: Date,
+        endDate: Date
+    ): Promise<Account[]> => {
+        const dateFormat = 'yyyy-MM-dd'
 
         return this.fetchPagedTransactions(accountConfig, startDate, endDate)
             .then(data => {
@@ -279,7 +310,60 @@ export class PlaidIntegration {
                 return accounts
             })
             .catch(error => {
-                logError(`Error fetching account ${accountConfig.id}.`, error)
+                logError(`Error fetching account ${accountConfig.id}`, error)
+                return []
+            })
+    }
+
+    public fetchACcountWithHoldings = async (accountConfig: AccountConfig): Promise<Account[]> => {
+        return this.fetchHoldings(accountConfig)
+            .then(data => {
+                let accounts: Account[] = data.accounts.map(account => ({
+                    integration: IntegrationId.Plaid,
+                    accountId: account.account_id,
+                    mask: account.mask,
+                    institution: account.name,
+                    account: account.official_name,
+                    type: account.subtype || account.type,
+                    current: account.balances.current,
+                    available: account.balances.available,
+                    limit: account.balances.limit,
+                    currency: account.balances.iso_currency_code || account.balances.unofficial_currency_code
+                }))
+
+                const holdings: Holdings[] = data.holdings.map(holding => ({
+                    integration: IntegrationId.Plaid,
+                    account_id: holding.account_id,
+                    cost_basis: holding.cost_basis,
+                    institution_price: holding.institution_price,
+                    institution_price_as_of: holding.institution_price_as_of,
+                    institution_price_datetime: parseISO(holding.institution_price_datetime),
+                    institution_value: holding.institution_value,
+                    iso_currency_code: holding.iso_currency_code,
+                    quantity: holding.quantity,
+                    security_id: holding.security_id,
+                    unofficial_currency_code: holding.unofficial_currency_code,
+                    security_name: data.securities.find(security => security.security_id === holding.security_id).name,
+                    ticker: data.securities.find(security => security.security_id === holding.security_id).ticker_symbol
+                }))
+
+                accounts = accounts.map(account => ({
+                    ...account,
+                    holdings: holdings
+                        .filter(holding => holding.account_id === account.accountId)
+                        .map(holding => ({
+                            ...holding,
+                            institution: account.institution,
+                            account: account.account
+                        }))
+                }))
+
+                // console.log(accounts)
+                logInfo(`Fetched ${data.accounts.length} sub-accounts and ${data.holdings.length} holdings.`, accounts)
+                return accounts
+            })
+            .catch(error => {
+                logError(`Error fetching account ${accountConfig.id}`, error)
                 return []
             })
     }

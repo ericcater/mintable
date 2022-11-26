@@ -74,12 +74,12 @@ export class GoogleIntegration {
     public getSheets = (documentId?: string): Promise<sheets_v4.Schema$Sheet[]> => {
         return this.sheets
             .get({ spreadsheetId: documentId || this.googleConfig.documentId })
-            .then(({data}) => {
+            .then(({ data }) => {
                 logInfo(`Fetched ${data.sheets.length} sheets.`, data.sheets)
                 return data.sheets
             })
             .catch(error => {
-                logError(`Error fetching sheets for spreadsheet ${this.googleConfig.documentId}.`, error)
+                logError(`Error fetching sheets for spreadsheet ${this.googleConfig.documentId}`, error)
                 return []
             })
     }
@@ -91,7 +91,7 @@ export class GoogleIntegration {
         try {
             sourceSheetId = sheets.find(sheet => sheet.properties.title === title).properties.sheetId
         } catch (error) {
-            logError(`Error finding template sheet ${title} in document ${sourceDocumentId}.`, { error, sheets })
+            logError(`Error finding template sheet ${title} in document ${sourceDocumentId}`, { error, sheets })
         }
 
         return this.sheets.sheets
@@ -101,11 +101,11 @@ export class GoogleIntegration {
                 requestBody: { destinationSpreadsheetId: this.googleConfig.documentId }
             })
             .then(res => {
-                logInfo(`Copied sheet ${title}.`, res.data)
+                logInfo(`Copied sheet ${title}`, res.data)
                 return res.data
             })
             .catch(error => {
-                logError(`Error copying sheet ${title}.`, error)
+                logError(`Error copying sheet ${title}`, error)
                 return {}
             })
     }
@@ -116,12 +116,12 @@ export class GoogleIntegration {
                 spreadsheetId: this.googleConfig.documentId,
                 requestBody: { requests: [{ addSheet: { properties: { title } } }] }
             })
-            .then(({data}) => {
-                logInfo(`Added sheet ${title}.`, data)
+            .then(({ data }) => {
+                logInfo(`Added sheet ${title}`, data)
                 return data.replies[0].addSheet.properties
             })
             .catch(error => {
-                logError(`Error adding sheet ${title}.`, error)
+                logError(`Error adding sheet ${title}`, error)
                 return {}
             })
     }
@@ -144,12 +144,12 @@ export class GoogleIntegration {
                     ]
                 }
             })
-            .then(({data}) => {
-                logInfo(`Renamed sheet ${oldTitle} to ${newTitle}.`, data)
+            .then(({ data }) => {
+                logInfo(`Renamed sheet ${oldTitle} to ${newTitle}`, data)
                 return data.replies
             })
             .catch(error => {
-                logError(`Error renaming sheet ${oldTitle} to ${newTitle}.`, error)
+                logError(`Error renaming sheet ${oldTitle} to ${newTitle}`, error)
                 return []
             })
     }
@@ -178,11 +178,11 @@ export class GoogleIntegration {
                 requestBody: { ranges: translatedRanges }
             })
             .then(res => {
-                logInfo(`Cleared ${ranges.length} range(s): ${translatedRanges}.`, res.data)
+                logInfo(`Cleared ${ranges.length} range(s): ${translatedRanges}`, res.data)
                 return res.data
             })
             .catch(error => {
-                logError(`Error clearing ${ranges.length} range(s): ${translatedRanges}.`, error)
+                logError(`Error clearing ${ranges.length} range(s): ${translatedRanges}`, error)
                 return {}
             })
     }
@@ -201,11 +201,11 @@ export class GoogleIntegration {
                 }
             })
             .then(res => {
-                logInfo(`Updated ${data.length} range(s): ${data.map(r => r.range)}.`, res.data)
+                logInfo(`Updated ${data.length} range(s): ${data.map(r => r.range)}`, res.data)
                 return res.data
             })
             .catch(error => {
-                logError(`Error updating ${data.length} range(s): ${data.map(r => r.range)}.`, error)
+                logError(`Error updating ${data.length} range(s): ${data.map(r => r.range)}`, error)
                 return {}
             })
     }
@@ -227,11 +227,11 @@ export class GoogleIntegration {
                 }
             })
             .then(res => {
-                logInfo(`Updated indices for ${sheets.length} sheets.`, res.data)
+                logInfo(`Updated indices for ${sheets.length} sheets`, res.data)
                 return res.data
             })
             .catch(error => {
-                logError(`Error updating indices for ${sheets.length} sheets.`, error)
+                logError(`Error updating indices for ${sheets.length} sheets`, error)
                 return {}
             })
     }
@@ -355,7 +355,7 @@ export class GoogleIntegration {
 
         //Not terribly useful in currently since anything that isn't fetched this run is overwritten
         if (writeToOneSheet) {
-            await this.updateSheet("AllTest",transactions,this.config.transactions.properties,true,true)
+            await this.updateSheet('AllTest', transactions, this.config.transactions.properties, true, true)
         } else {
             // Split transactions by month
             const groupedTransactions = groupBy(transactions, transaction => formatISO(startOfMonth(transaction.date)))
@@ -371,6 +371,22 @@ export class GoogleIntegration {
                 )
             }
         }
+        // Sort Sheets
+        await this.sortSheets()
+
+        // Format, etc.
+        // await this.formatSheets()
+
+        logInfo('You can view your sheet here:\n')
+        console.log(`https://docs.google.com/spreadsheets/d/${this.googleConfig.documentId}`)
+    }
+
+    public updateHoldings = async (accounts: Account[]) => {
+        // Sort transactions by date
+        const holdings = accounts.map(account => account.holdings).flat(10)
+
+        await this.updateSheet('Investments', holdings, this.config.holdings.properties, true, true)
+
         // Sort Sheets
         await this.sortSheets()
 
@@ -441,10 +457,10 @@ export class GoogleIntegration {
                 spreadsheetId: this.googleConfig.documentId,
                 range: `${sheetTitle}!A:A`
             })
-            .then(({data}) => data.values[data.values.length - 1][0])
+            .then(({ data }) => data.values[data.values.length - 1][0])
 
         if (lastDate === date) {
-            console.log('Day has been recorded')
+            console.log('Day has already been recorded in history')
             return
         }
         // #endregion check if this day has been done
@@ -454,7 +470,7 @@ export class GoogleIntegration {
                 spreadsheetId: this.googleConfig.documentId,
                 range: `${sheetTitle}!1:1`
             })
-            .then(({data}) => data.values[0])
+            .then(({ data }) => data.values[0])
 
         const missingIds = ids.filter(id => !idsFromSheet.includes(id))
 
@@ -484,10 +500,12 @@ export class GoogleIntegration {
             end: `${columnHeaders[row.length > 0 ? row.length - 1 : 1]}`
         })
 
-        const existingData = await this.sheets.values.get({
-            spreadsheetId: this.googleConfig.documentId,
-            range: existingDataRange
-        }).then(({data}) => data)
+        const existingData = await this.sheets.values
+            .get({
+                spreadsheetId: this.googleConfig.documentId,
+                range: existingDataRange
+            })
+            .then(({ data }) => data)
 
         const numRows = existingData.values ? existingData.values.length : 0
         //#endregion get existing data
@@ -497,6 +515,8 @@ export class GoogleIntegration {
             start: `A${numRows + rowOffset}`,
             end: `${columnHeaders[row.length > 0 ? row.length - 1 : 1]}${numRows + rowOffset}`
         }
+
+        console.log("Recorded new day in history")
 
         return this.updateRanges([{ range: newDataRange, data: [row] }])
     }

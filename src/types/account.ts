@@ -1,3 +1,4 @@
+import { Holdings as Holding } from './holdings'
 import { IntegrationId } from './integrations'
 import { Transaction } from './transaction'
 
@@ -25,11 +26,19 @@ export interface Account {
 
     // transaction list
     transactions?: Transaction[]
+
+    holdings?: Holding[]
+}
+
+export enum AccountTypes {
+    Invesment = 'Investment',
+    Transaction = 'Transaction'
 }
 
 export interface BaseAccountConfig {
     id: string
     integration: IntegrationId
+    type?: AccountTypes
 }
 
 export interface PlaidAccountConfig extends BaseAccountConfig {

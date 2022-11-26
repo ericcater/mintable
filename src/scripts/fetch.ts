@@ -2,7 +2,7 @@ import { getConfig } from '../common/config'
 import { PlaidIntegration } from '../integrations/plaid/plaidIntegration'
 import { GoogleIntegration } from '../integrations/google/googleIntegration'
 import { logInfo } from '../common/logging'
-import { Account } from '../types/account'
+import { Account, AccountTypes } from '../types/account'
 import { IntegrationId } from '../types/integrations'
 import { parseISO, subMonths, startOfMonth } from 'date-fns'
 import { CSVImportIntegration } from '../integrations/csv-import/csvImportIntegration'
@@ -25,12 +25,26 @@ export default async () => {
     for (const accountId in config.accounts) {
         const accountConfig = config.accounts[accountId]
 
-        logInfo(`Fetching account ${accountConfig.id} using ${accountConfig.integration}.`)
+        logInfo(`Fetching account ${accountConfig.id} using ${accountConfig.integration}`)
 
         switch (accountConfig.integration) {
             case IntegrationId.Plaid:
                 const plaid = new PlaidIntegration(config)
-                accounts = accounts.concat(await plaid.fetchAccount(accountConfig, startDate, endDate))
+
+                if (accountConfig.type === AccountTypes.Invesment) {
+                }
+
+                switch (accountConfig.type) {
+                    case AccountTypes.Invesment:
+                        accounts = accounts.concat(await plaid.fetchACcountWithHoldings(accountConfig))
+                        break
+                    case AccountTypes.Transaction:
+                    default:
+                        accounts = accounts.concat(
+                            await plaid.fetchAccountWithTransactions(accountConfig, startDate, endDate)
+                        )
+                        break
+                }
                 break
 
             case IntegrationId.CSVImport:
@@ -106,7 +120,8 @@ export default async () => {
     switch (config.transactions.integration) {
         case IntegrationId.Google:
             const google = new GoogleIntegration(config)
-            await google.updateTransactions(accounts)
+            await google.updateTransactions(accounts.filter(account => account.transactions))
+            await google.updateHoldings(accounts.filter(account => account.holdings))
             break
         case IntegrationId.CSVExport:
             const csv = new CSVExportIntegration(config)
