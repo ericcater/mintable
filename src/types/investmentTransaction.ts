@@ -1,6 +1,6 @@
 import { TransactionBase } from './account'
 import { IntegrationId } from './integrations'
-// import { InvestmentTransactionSubtype, InvestmentTransactionType } from 'plaid'
+import { InvestmentTransactionSubtype, InvestmentTransactionType } from 'plaid'
 
 export interface InvestmentTransaction extends TransactionBase {
     
@@ -11,8 +11,8 @@ export interface InvestmentTransaction extends TransactionBase {
     amount: number
     price: number
     fees: number | null
-    // type: InvestmentTransactionType
-    // subtype: InvestmentTransactionSubtype
+    type?: InvestmentTransactionType
+    subtype?: InvestmentTransactionSubtype
     iso_currency_code: string | null
     unofficial_currency_code: string | null
     security_name?: string

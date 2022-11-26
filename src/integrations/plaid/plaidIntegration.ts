@@ -409,8 +409,8 @@ export class PlaidIntegration {
                         amount: transaction.amount,
                         price: transaction.price,
                         fees: transaction.fees,
-                        // type: transaction.type,
-                        // subtype: transaction.subtype,
+                        type: transaction.type,
+                        subtype: transaction.subtype,
                         iso_currency_code: transaction.iso_currency_code,
                         unofficial_currency_code: transaction.unofficial_currency_code,
                         ticker: data.securities.find(security => security.security_id === transaction.security_id)
@@ -472,6 +472,7 @@ export class PlaidIntegration {
                     iso_currency_code: holding.iso_currency_code,
                     quantity: holding.quantity,
                     security_id: holding.security_id,
+                    type: data.securities.find(security => security.security_id === holding.security_id).type,
                     unofficial_currency_code: holding.unofficial_currency_code,
                     security_name: data.securities.find(security => security.security_id === holding.security_id).name,
                     ticker: data.securities.find(security => security.security_id === holding.security_id).ticker_symbol

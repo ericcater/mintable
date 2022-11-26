@@ -341,28 +341,28 @@ export class GoogleIntegration {
 
         const columnHeaders = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
-        const writeRange = {
+        const range = {
             sheet: sheetTitle,
             start: `A1`,
             end: `${columnHeaders[columns.length > 0 ? columns.length - 1 : 1]}${rows.length + 1}`
         }
 
-        const clearRange = {
-            sheet: sheetTitle,
-            start: `A1`,
-            end: 'H19' //TODO will have to change this if more than 19 accounts
-        }
         const data = [columns].concat(rows.map(row => this.getRowWithDefaults(row, columns)))
 
-        await this.clearRanges(clearEntireSheet === true ? [{ sheet: sheetTitle }] : [clearRange], documentId)
-        return this.updateRanges([{ range: writeRange, data }], documentId)
+        await this.clearRanges(
+            clearEntireSheet === true
+                ? [{ sheet: sheetTitle }]
+                : [{ sheet: range.sheet, start: range.start, end: range.end.replace(/[0-9]/g, '') }],
+            documentId
+        )
+        return this.updateRanges([{ range, data }], documentId)
     }
 
     public updateTransactions = async (accounts: Account[], type: AccountTypes, writeToOneSheet?: boolean) => {
         accounts = accounts.filter(account => account.accountType === type)
 
-        if(accounts.length ===0){
-            return;
+        if (accounts.length === 0) {
+            return
         }
         let properties
         let documentId
@@ -453,7 +453,7 @@ export class GoogleIntegration {
         // Sort transactions by date
         const holdings = accounts.map(account => account.holdings).flat(10)
 
-        await this.updateSheet('Investments', holdings, this.config.holdings.properties, true, true, documentId)
+        await this.updateSheet('Investments', holdings, this.config.holdings.properties, true, false, documentId)
 
         // Sort Sheets
         await this.sortSheets(documentId)
