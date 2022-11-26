@@ -91,7 +91,7 @@ export class CSVImportIntegration {
                                     return outputRow
                                 })
 
-                                logInfo(`Successfully imported transactions from ${match}.`)
+                                logInfo(`Successfully imported transactions from ${match}`)
 
                                 return transactions.filter(transaction => {
                                     if (transaction.hasOwnProperty('date')) {
@@ -100,7 +100,7 @@ export class CSVImportIntegration {
                                     return true
                                 })
                             } catch (e) {
-                                logError(`Error importing transactions from ${match}.`, e)
+                                logError(`Error importing transactions from ${match}`, e)
                             }
                         })
                     } catch (e) {

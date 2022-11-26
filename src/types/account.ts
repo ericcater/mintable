@@ -30,9 +30,15 @@ export interface Account {
     holdings?: Holding[]
 }
 
+export enum AccountTypes {
+    Invesment = 'Investment',
+    Transaction = 'Transaction'
+}
+
 export interface BaseAccountConfig {
     id: string
     integration: IntegrationId
+    type?: AccountTypes
 }
 
 export interface PlaidAccountConfig extends BaseAccountConfig {

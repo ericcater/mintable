@@ -21,6 +21,7 @@ import { logInfo, logError, logWarn } from '../../common/logging'
 import http from 'http'
 import { AccountConfig, Account, PlaidAccountConfig } from '../../types/account'
 import { Transaction } from '../../types/transaction'
+import { Holdings } from '../../types/holdings'
 
 const PLAID_USER_ID = 'LOCAL'
 
@@ -223,7 +224,9 @@ export class PlaidIntegration {
         })
     }
 
-    public fetchHoldings = async (accountConfig: AccountConfig): Promise<any> => {
+    public fetchHoldings = async (
+        accountConfig: AccountConfig
+    ): Promise<{ accounts: AccountBase[]; holdings: plaid.Holding[]; securities: plaid.Security[] }> => {
         return new Promise(async (resolve, reject) => {
             accountConfig = accountConfig as PlaidAccountConfig
 
@@ -238,7 +241,7 @@ export class PlaidIntegration {
                 let securities = response.securities
                 let accounts = response.accounts
 
-                return resolve({ accounts, holdings })
+                return resolve({ accounts, holdings, securities })
             } catch (e) {
                 // console.log(e)
                 return reject(e)
@@ -246,10 +249,12 @@ export class PlaidIntegration {
         })
     }
 
-    public fetchAccount = async (accountConfig: AccountConfig, startDate: Date, endDate: Date): Promise<Account[]> => {
-        if (startDate < subMonths(new Date(), 5)) {
-            logWarn('Transaction history older than 6 months may not be available for some institutions.', {})
-        }
+    public fetchAccountWithTransactions = async (
+        accountConfig: AccountConfig,
+        startDate: Date,
+        endDate: Date
+    ): Promise<Account[]> => {
+        const dateFormat = 'yyyy-MM-dd'
 
         return this.fetchPagedTransactions(accountConfig, startDate, endDate)
             .then(data => {
@@ -305,13 +310,61 @@ export class PlaidIntegration {
                 return accounts
             })
             .catch(error => {
-                logError(`Error fetching account ${accountConfig.id}.`, error)
+                logError(`Error fetching account ${accountConfig.id}`, error)
                 return []
             })
     }
 
-    public fetchAccountHoldings = async (accountConfig: AccountConfig): Promise<Account[]> => {
-        const accounts: Account[] = []
-        return accounts
+    public fetchACcountWithHoldings = async (accountConfig: AccountConfig): Promise<Account[]> => {
+        return this.fetchHoldings(accountConfig)
+            .then(data => {
+                let accounts: Account[] = data.accounts.map(account => ({
+                    integration: IntegrationId.Plaid,
+                    accountId: account.account_id,
+                    mask: account.mask,
+                    institution: account.name,
+                    account: account.official_name,
+                    type: account.subtype || account.type,
+                    current: account.balances.current,
+                    available: account.balances.available,
+                    limit: account.balances.limit,
+                    currency: account.balances.iso_currency_code || account.balances.unofficial_currency_code
+                }))
+
+                const holdings: Holdings[] = data.holdings.map(holding => ({
+                    integration: IntegrationId.Plaid,
+                    account_id: holding.account_id,
+                    cost_basis: holding.cost_basis,
+                    institution_price: holding.institution_price,
+                    institution_price_as_of: holding.institution_price_as_of,
+                    institution_price_datetime: parseISO(holding.institution_price_datetime),
+                    institution_value: holding.institution_value,
+                    iso_currency_code: holding.iso_currency_code,
+                    quantity: holding.quantity,
+                    security_id: holding.security_id,
+                    unofficial_currency_code: holding.unofficial_currency_code,
+                    security_name: data.securities.find(security => security.security_id === holding.security_id).name,
+                    ticker: data.securities.find(security => security.security_id === holding.security_id).ticker_symbol
+                }))
+
+                accounts = accounts.map(account => ({
+                    ...account,
+                    holdings: holdings
+                        .filter(holding => holding.account_id === account.accountId)
+                        .map(holding => ({
+                            ...holding,
+                            institution: account.institution,
+                            account: account.account
+                        }))
+                }))
+
+                // console.log(accounts)
+                logInfo(`Fetched ${data.accounts.length} sub-accounts and ${data.holdings.length} holdings.`, accounts)
+                return accounts
+            })
+            .catch(error => {
+                logError(`Error fetching account ${accountConfig.id}`, error)
+                return []
+            })
     }
 }

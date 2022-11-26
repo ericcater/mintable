@@ -10,6 +10,7 @@ import { Definition, CompilerOptions, PartialArgs, getProgramFromFiles, generate
 import Ajv from 'ajv'
 import { BalanceConfig } from '../types/balance'
 import { jsonc } from 'jsonc'
+import { HoldingConfig } from '../types/holdings'
 
 const DEFAULT_CONFIG_FILE = '~/mintable.jsonc'
 const DEFAULT_CONFIG_VAR = 'MINTABLE_CONFIG'
@@ -19,6 +20,10 @@ const DEFAULT_CONFIG: Config = {
     transactions: {
         integration: IntegrationId.Google,
         properties: ['date', 'amount', 'name', 'account', 'category']
+    },
+    holdings: {
+        integration: IntegrationId.Google,
+        properties: []
     },
     balances: {
         integration: IntegrationId.Google,
@@ -43,6 +48,7 @@ export interface Config {
     integrations: { [id: string]: IntegrationConfig }
     accounts: { [id: string]: AccountConfig }
     transactions: TransactionConfig
+    holdings: HoldingConfig
     balances: BalanceConfig
 }
 
