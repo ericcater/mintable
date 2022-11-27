@@ -10,6 +10,7 @@ export interface InvestmentTransaction extends TransactionBase {
     quantity: number
     amount: number
     price: number
+    units: number
     fees: number | null
     type?: InvestmentTransactionType
     subtype?: InvestmentTransactionSubtype
@@ -17,6 +18,7 @@ export interface InvestmentTransaction extends TransactionBase {
     unofficial_currency_code: string | null
     security_name?: string
     ticker?: string
+    security_type? : string
 }
 
 export interface InvestmentTransactionConfig {
