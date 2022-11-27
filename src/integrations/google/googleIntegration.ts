@@ -401,7 +401,7 @@ export class GoogleIntegration {
             }
         }
         // Sort Sheets
-        await this.sortSheets(documentId)
+        // await this.sortSheets(documentId)
 
         // Format, etc.
         // await this.formatSheets(documentId)
@@ -442,7 +442,7 @@ export class GoogleIntegration {
             }
         }
         // Sort Sheets
-        await this.sortSheets(documentId)
+        // await this.sortSheets(documentId)
 
         // Format, etc.
         // await this.formatSheets()
@@ -456,7 +456,7 @@ export class GoogleIntegration {
         await this.updateSheet('Investments', holdings, this.config.holdings.properties, true, false, documentId)
 
         // Sort Sheets
-        await this.sortSheets(documentId)
+        // await this.sortSheets(documentId)
 
         // Format, etc.
         // await this.formatSheets()
@@ -469,7 +469,7 @@ export class GoogleIntegration {
         await this.balanceHistory('History', accounts)
 
         // Sort Sheets
-        await this.sortSheets()
+        // await this.sortSheets()
 
         // Format, etc.
         // await this.formatSheets()
