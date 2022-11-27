@@ -145,4 +145,5 @@ export default async () => {
         default:
             break
     }
+    logInfo("Done!")
 }

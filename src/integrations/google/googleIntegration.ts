@@ -395,7 +395,7 @@ export class GoogleIntegration {
                     groupedTransactions[month],
                     properties,
                     true,
-                    true,
+                    false,
                     documentId
                 )
             }
