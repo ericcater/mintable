@@ -372,6 +372,8 @@ export class GoogleIntegration {
                 properties = this.config.investmentTransactions.properties
                 documentId = this.googleConfig.documentId[1]
                 break
+            case AccountTypes.Disabled:
+                break;
             case AccountTypes.Transactional:
             default:
                 properties = this.config.transactions.properties

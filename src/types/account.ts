@@ -43,7 +43,8 @@ export type TransactionBase = {
 
 export enum AccountTypes {
     Invesment = 'Investment',
-    Transactional = 'Transactional'
+    Transactional = 'Transactional',
+    Disabled = 'Disabled'
 }
 
 export interface BaseAccountConfig {

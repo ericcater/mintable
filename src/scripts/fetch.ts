@@ -51,6 +51,8 @@ export default async () => {
 
                         accounts = accounts.concat(accountInvestmentTransactions)
                         break
+                    case AccountTypes.Disabled:
+                         break;
                     case AccountTypes.Transactional:
                     default:
                         accounts = accounts.concat(
