@@ -45,9 +45,6 @@
         "typescript-json-schema": "^0.42.0",
         "yargs": "^15.1.0"
     },
-    "overrides": {
-        "@types/express-serve-static-core": "4.17.30"
-    },
     "devDependencies": {
         "prettier": "^1.16.4",
         "ts-node": "^10.9.1"
