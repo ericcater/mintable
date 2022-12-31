@@ -15,7 +15,7 @@ Mintable helps you:
 
 <br>
 
-[![](https://img.shields.io/github/workflow/status/kevinschaich/mintable/Test)](https://github.com/kevinschaich/mintable/actions?query=workflow%3ATest)
+[![](https://img.shields.io/github/actions/workflow/status/kevinschaich/mintable/test.yml?branch=master)](https://github.com/kevinschaich/mintable/actions?query=workflow%3ATest)
 [![](https://img.shields.io/npm/v/mintable)](https://www.npmjs.com/package/mintable)
 [![](https://img.shields.io/github/release/kevinschaich/mintable.svg)](https://github.com/kevinschaich/mintable/releases)
 [![](https://img.shields.io/github/license/kevinschaich/mintable.svg)](https://github.com/kevinschaich/mintable/blob/master/LICENSE)
@@ -71,6 +71,10 @@ Check out the full documentation [in the `./docs` folder](./docs/README.md).
 **How do I use it with banks outside the US?**
 
 * Fork & edit the [country codes here](https://github.com/kevinschaich/mintable/blob/377257a6040ed9b6dd93d88435e53c48108b5806/src/integrations/plaid/plaidIntegration.ts#L126). Default support is for US banks.
+
+**How do I use it with Windows?**
+
+* Windows is not natively supported but you can try [this](https://github.com/kevinschaich/mintable/issues/125#issuecomment-1253961155).
 
 **It's not working!**
 
