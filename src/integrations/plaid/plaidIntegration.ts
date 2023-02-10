@@ -405,7 +405,7 @@ export class PlaidIntegration {
                         security_id: transaction.security_id,
                         date: parseISO(transaction.date),
                         name: transaction.name,
-                        quantity: transaction.quantity,
+                        quantity: Math.abs(transaction.quantity),
                         amount: transaction.amount,
                         price: transaction.price,
                         fees: transaction.fees,
