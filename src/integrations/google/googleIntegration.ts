@@ -478,7 +478,8 @@ export class GoogleIntegration {
     }
 
     public balanceHistory = async (sheetTitle: string, accounts: Account[], useTemplate?: boolean) => {
-        const columnHeaders = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+        let columnHeaders = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+        columnHeaders =[ ...columnHeaders, ...columnHeaders.map(x => columnHeaders[0] +x)]
         const ids = accounts.map(account => account.accountId)
         const rowOffset: number = 3 // 1 to not overwrite last line, two for account id/name
         const dateFormat = 'MM/dd/yyyy'
