@@ -179,7 +179,8 @@ export class TellerIntegration {
         const account: Account = {
             integration: IntegrationId.Teller,
             accountId: accountConfig.id,
-            account: accountConfig.id
+            account: accountConfig.id,
+            accountType : accountConfig.type
         }
 
         const accountInfo = await this.tellerApi(accountConfig.token, `accounts/${accountConfig.id}`)
