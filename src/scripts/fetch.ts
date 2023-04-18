@@ -69,14 +69,9 @@ export default async () => {
                 break
 
             case IntegrationId.Teller:
-                try {
-                    const teller = new TellerIntegration(config)
-                    accounts = accounts.concat(await teller.fetchAccount(accountConfig, startDate, endDate))
-                    break
-                }
-                catch {
-                    logWarn("probably failed in github actions")
-                }
+                const teller = new TellerIntegration(config)
+                accounts = accounts.concat(await teller.fetchAccount(accountConfig, startDate, endDate))
+                break
 
             default:
                 break

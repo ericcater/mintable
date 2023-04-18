@@ -17,18 +17,8 @@ jobs:
 
     env:
       MINTABLE_CONFIG: ${{ secrets.MINTABLE_CONFIG }}
-      TELLER_KEY: ${{ secrets.TELLER_KEY }}
-      TELLER_CERT: ${{ secrets.TELLER_CERT }}
 
     steps:
-    - name: Save TELLER_KEY
-      run: |
-        echo "$TELLER_KEY" > private-key.teller.mintable.pem
-      shell: bash
-    - name: Save TELLER_CERT
-      run: |
-        echo "$TELLER_CERT" > certificate.teller.mintable.pem
-      shell: bash
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1

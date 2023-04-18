@@ -26,8 +26,8 @@ export class TellerIntegration {
             const req = https.request(`https://api.teller.io/${path}`, {
                 method,
                 auth: `${token}:`,
-                cert: readFileSync(this.tellerConfig.pathCertificate),
-                key: readFileSync(this.tellerConfig.pathPrivateKey),
+                cert: this.tellerConfig.pathCertificate,
+                key: this.tellerConfig.pathPrivateKey,
             }, (res) => {
                 const resData = []
                 res.on('data', (chunk) => resData.push(chunk))
