@@ -29,7 +29,7 @@ export class TellerIntegration {
         }
         catch (e){
             logWarn("failed to read certFile, falling back to env var")
-            const certFile = process.env["TELLER_CERT"]
+            certFile = process.env["TELLER_CERT"]
 
             if (certFile === undefined) {
                 throw `Variable "TELLER_CERT" not defined in environment.`
@@ -43,7 +43,7 @@ export class TellerIntegration {
         }
         catch (e){
             logWarn("failed to read keyFile, falling back to env var")
-            const keyFile = process.env["TELLER_KEY"]
+            keyFile = process.env["TELLER_KEY"]
 
             if (keyFile === undefined) {
                 throw `Variable "TELLER_KEY" not defined in environment.`
