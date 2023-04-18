@@ -75,7 +75,7 @@ export default async () => {
                     break
                 }
                 catch {
-                    logError("probably failed in github actions")
+                    logWarn("probably failed in github actions")
                 }
 
             default:
