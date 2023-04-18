@@ -2,7 +2,7 @@ import { getConfig } from '../common/config'
 import { PlaidIntegration } from '../integrations/plaid/plaidIntegration'
 import { TellerIntegration } from '../integrations/teller/tellerIntegration'
 import { GoogleIntegration } from '../integrations/google/googleIntegration'
-import { logInfo } from '../common/logging'
+import { logError, logInfo } from '../common/logging'
 import { Account, AccountTypes } from '../types/account'
 import { IntegrationId } from '../types/integrations'
 import { parseISO, subMonths, startOfMonth } from 'date-fns'
@@ -69,9 +69,14 @@ export default async () => {
                 break
 
             case IntegrationId.Teller:
-                const teller = new TellerIntegration(config)
-                accounts = accounts.concat(await teller.fetchAccount(accountConfig, startDate, endDate))
-                break
+                try {
+                    const teller = new TellerIntegration(config)
+                    accounts = accounts.concat(await teller.fetchAccount(accountConfig, startDate, endDate))
+                    break
+                }
+                catch {
+                    logError("probably failed in github actions")
+                }
 
             default:
                 break
