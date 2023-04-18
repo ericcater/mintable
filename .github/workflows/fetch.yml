@@ -21,6 +21,12 @@ jobs:
       TELLER_CERT: ${{ secrets.TELLER_CERT }}
 
     steps:
+    - name: Save TELLER_KEY
+      run: |
+        echo "$TELLER_KEY" > private-key.teller.mintable.pem
+    - name: Save TELLER_CERT
+      run: |
+        echo "$TELLER_CERT" > certificate.teller.mintable.pem
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
