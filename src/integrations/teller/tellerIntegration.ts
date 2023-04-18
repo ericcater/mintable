@@ -22,12 +22,40 @@ export class TellerIntegration {
     }
 
     public tellerApi = (token: string, path: string, method = 'GET', body?: any): Promise<any> => {
+        let certFile;
+        try {
+            certFile = readFileSync(this.tellerConfig.pathCertificate)
+            
+        }
+        catch (e){
+            const certFile = process.env["TELLER_CERT"]
+
+            if (certFile === undefined) {
+                throw `Variable "TELLER_CERT" not defined in environment.`
+            }
+        }
+
+        let keyFile;
+        try {
+            keyFile = readFileSync(this.tellerConfig.pathPrivateKey)
+            
+        }
+        catch (e){
+            const keyFile = process.env["TELLER_KEY"]
+
+            if (keyFile === undefined) {
+                throw `Variable "TELLER_KEY" not defined in environment.`
+            }
+        }
+
+
+
         return new Promise((resolve, reject) => {
             const req = https.request(`https://api.teller.io/${path}`, {
                 method,
                 auth: `${token}:`,
-                cert: readFileSync(this.tellerConfig.pathCertificate),
-                key: readFileSync(this.tellerConfig.pathPrivateKey),
+                cert: certFile,
+                key: keyFile,
             }, (res) => {
                 const resData = []
                 res.on('data', (chunk) => resData.push(chunk))
