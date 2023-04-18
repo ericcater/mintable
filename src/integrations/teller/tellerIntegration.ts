@@ -28,6 +28,7 @@ export class TellerIntegration {
             
         }
         catch (e){
+            logWarn("failed to read certFile, falling back to env var")
             const certFile = process.env["TELLER_CERT"]
 
             if (certFile === undefined) {
@@ -41,6 +42,7 @@ export class TellerIntegration {
             
         }
         catch (e){
+            logWarn("failed to read keyFile, falling back to env var")
             const keyFile = process.env["TELLER_KEY"]
 
             if (keyFile === undefined) {
