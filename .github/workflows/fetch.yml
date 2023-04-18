@@ -17,6 +17,8 @@ jobs:
 
     env:
       MINTABLE_CONFIG: ${{ secrets.MINTABLE_CONFIG }}
+      TELLER_KEY: ${{ secrets.TELLER_KEY }}
+      TELLER_CERT: ${{ secrets.TELLER_CERT }}
 
     steps:
     - uses: actions/checkout@v2
