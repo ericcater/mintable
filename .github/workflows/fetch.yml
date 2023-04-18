@@ -23,11 +23,11 @@ jobs:
     steps:
     - name: Save TELLER_KEY
       run: |
-        echo "$TELLER_KEY" > private-key.teller.mintable.pem
+        echo "$TELLER_KEY" > ~/private-key.teller.mintable.pem
       shell: bash
     - name: Save TELLER_CERT
       run: |
-        echo "$TELLER_CERT" > certificate.teller.mintable.pem
+        echo "$TELLER_CERT" > ~/certificate.teller.mintable.pem
       shell: bash
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
