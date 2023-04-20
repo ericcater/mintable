@@ -1,0 +1,28 @@
+name: Fetch
+
+on:
+    workflow_dispatch 
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x, 14.x]
+
+    env:
+      MINTABLE_CONFIG: ${{ secrets.MINTABLE_CONFIG_TEST }}
+
+    steps:
+    - run: echo ${{ secrets.TELLER_CERT }} | base64 -d > .teller_cert
+    - run: echo ${{ secrets.TELLER_KEY }} | base64 -d > .teller_key
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - run: npm run build
+    - run: node ./lib/scripts/cli.js fetch --ci
