@@ -23,11 +23,19 @@ export class TellerIntegration {
 
     public tellerApi = (token: string, path: string, method = 'GET', body?: any): Promise<any> => {
         return new Promise((resolve, reject) => {
+            let cert,key
+            try {
+                cert = readFileSync(this.tellerConfig.pathCertificate)
+                key = readFileSync(this.tellerConfig.pathPrivateKey)
+            }
+            catch {
+                logError("error reading cert or key file")
+            }
             const req = https.request(`https://api.teller.io/${path}`, {
                 method,
                 auth: `${token}:`,
-                cert: readFileSync(this.tellerConfig.pathCertificate),
-                key: readFileSync(this.tellerConfig.pathPrivateKey),
+                cert: cert,
+                key: key,
             }, (res) => {
                 const resData = []
                 res.on('data', (chunk) => resData.push(chunk))
