@@ -1,7 +1,7 @@
 name: Fetch
 
 on:
-    push:
+    pull_request:
         branches: [ teller_updates ]
 
 
