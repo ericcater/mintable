@@ -3,6 +3,7 @@ name: Fetch-test
 on:
     push:
         branches: [ teller-updates ]
+    workflow_dispatch:
 
 
 jobs:
