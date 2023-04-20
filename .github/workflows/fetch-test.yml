@@ -1,7 +1,9 @@
 name: Fetch
 
 on:
-    workflow_dispatch 
+    push:
+        branches: [ teller_updates ]
+
 
 jobs:
   build:
