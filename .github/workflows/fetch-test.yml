@@ -17,12 +17,11 @@ jobs:
     env:
       MINTABLE_CONFIG: ${{ secrets.MINTABLE_CONFIG_TEST }}
       TELLER_CERT: ${{ secrets.TELLER_CERT }}
-      
       TELLER_KEY: ${{ secrets.TELLER_KEY }}
 
     steps:
-    - run: echo "${{ secrets.TELLER_CERT }}" | base64 -d > .teller_cert
-    - run: echo "${{ secrets.TELLER_KEY }}" | base64 -d > .teller_key
+    - run: echo "${{ secrets.TELLER_CERT }}" | base64 -d | .teller_cert
+    - run: echo "${{ secrets.TELLER_KEY }}" | base64 -d | .teller_key
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
