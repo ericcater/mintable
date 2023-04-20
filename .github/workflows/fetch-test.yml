@@ -1,8 +1,8 @@
 name: Fetch
 
 on:
-    pull_request:
-        branches: [ teller_updates ]
+    push:
+        branches: [ teller-updates ]
 
 
 jobs:
