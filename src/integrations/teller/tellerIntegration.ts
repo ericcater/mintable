@@ -29,7 +29,7 @@ export class TellerIntegration {
                 key = readFileSync(this.tellerConfig.pathPrivateKey)
             }
             catch(e){
-                logError(e)
+                logError("error reading cert or key file", e)
             }
             const req = https.request(`https://api.teller.io/${path}`, {
                 method,
