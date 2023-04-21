@@ -1,10 +1,14 @@
 name: Test
 
 on:
-  #push:
-    #branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
+        inputs:
+          body:
+            default: ""
+          test:
+            default: "false"
 
 jobs:
   build:

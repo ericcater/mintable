@@ -3,6 +3,12 @@ name: Fetch
 on:
   push:
     branches: [ master ]
+  workflow_dispatch:
+      inputs:
+        body:
+          default: ""
+        test:
+          default: "false"
 
   schedule:
      - cron:  '0 * * * *'
