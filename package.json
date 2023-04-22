@@ -11,7 +11,8 @@
         "lint": "prettier --check ./src/**/*.js ./src/**/*.html ./src/**/*.ts ./docs/**/*.json",
         "lint-fix": "prettier --write ./src/**/*.js ./src/**/*.html ./src/**/*.ts ./docs/**/*.json",
         "test": "npm run build && npm run lint",
-        "debug": "ts-node ./src/scripts/cli.ts"
+        "debug": "ts-node ./src/scripts/cli.ts",
+        "alt": "ts-node ./src/scripts/cli.ts fetch --config-file=/home/eric/test-mintable.jsonc"
     },
     "files": [
         "src",
