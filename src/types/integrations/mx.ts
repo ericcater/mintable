@@ -12,7 +12,7 @@ export interface MxCredentials {
 
 export interface MxConfig extends BaseIntegrationConfig {
     id: IntegrationId.Mx
-    
+
     type: IntegrationType.Import
 
     environment: MxEnvironmentType
@@ -20,4 +20,17 @@ export interface MxConfig extends BaseIntegrationConfig {
     credentials: MxCredentials
 
     userGUID: string
+}
+
+export const defaultMxConfig: MxConfig = {
+    name: '',
+    id: IntegrationId.Mx,
+    type: IntegrationType.Import,
+
+    environment: MxEnvironmentType.Development,
+    credentials: {
+        clientId: '',
+        apiKey: ''
+    },
+    userGUID: ''
 }

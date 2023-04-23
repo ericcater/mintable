@@ -4,6 +4,7 @@ import prompts from 'prompts'
 const chalk = require('chalk')
 import { updateConfig, readConfig, getConfigSource } from '../common/config'
 import plaid from '../integrations/plaid/setup'
+import mx from '../integrations/mx/setup'
 import google from '../integrations/google/setup'
 import csvImport from '../integrations/csv-import/setup'
 import csvExport from '../integrations/csv-export/setup'
@@ -42,6 +43,7 @@ import { logError } from '../common/logging'
         fetch: fetch,
         'plaid-setup': plaid,
         'plaid-account-setup': plaidAccountSetup,
+        'mx-setup': mx,
         'mx-account-setup': mxAccountSetup,
         'google-setup': google,
         'csv-import-setup': csvImport,
