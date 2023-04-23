@@ -4,10 +4,12 @@ import prompts from 'prompts'
 const chalk = require('chalk')
 import { updateConfig, readConfig, getConfigSource } from '../common/config'
 import plaid from '../integrations/plaid/setup'
+import finicity from '../integrations/finicity/setup'
 import google from '../integrations/google/setup'
 import csvImport from '../integrations/csv-import/setup'
 import csvExport from '../integrations/csv-export/setup'
-import accountSetup from '../integrations/plaid/accountSetup'
+import finicityAccountSetup from '../integrations/finicity/accountSetup'
+import plaidAccountSetup from '../integrations/plaid/accountSetup'
 import fetch from './fetch'
 import migrate from './migrate'
 import { logError } from '../common/logging'
@@ -40,7 +42,9 @@ import { logError } from '../common/logging'
         migrate: migrate,
         fetch: fetch,
         'plaid-setup': plaid,
-        'account-setup': accountSetup,
+        'plaid-account-setup': plaidAccountSetup,
+        'finicity-setup': finicity,
+        'finicity-account-setup': finicityAccountSetup,
         'google-setup': google,
         'csv-import-setup': csvImport,
         'csv-export-setup': csvExport
@@ -66,7 +70,7 @@ import { logError } from '../common/logging'
         updateConfig(config => config, true)
         await plaid()
         await google()
-        await accountSetup()
+        await plaidAccountSetup()
     } else if (commands.hasOwnProperty(arg)) {
         commands[arg]()
     } else {
