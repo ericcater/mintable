@@ -2,7 +2,12 @@
     <head>
         <link rel="stylesheet" href="/css/account-setup.css" />
     </head>
+
     <body>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+
+        <script src="https://atrium.mx.com/connect.js"></script>
+
         <div id="container">
             <img id="logo" src="/img/icon.png" alt="Mintable Logo" />
             <h1>Mintable</h1>
@@ -16,43 +21,30 @@
             <button id="done-button">Done Linking Accounts</button>
         </div>
 
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
 
-        <script src="https://atrium.mx.com/connect.js"></script>
 
         <script type="text/javascript">
             ;(function($) {
                 var mxConnect = new window.MXConnect({
                     id: 'connect-widget',
                     iframeTitle: 'Connect',
-
+                    /**
+                     * Callback that for handling all events within Connect.
+                     * Only called in  ui_message_version 4 or higher.
+                     *
+                     * The events called here are the same events that come through post
+                     * messages.
+                     */
                     onEvent: function(type, payload) {
-                        console.log('onEvent', type, payload)
+                        console.log("onEvent", type, payload);
                         if (type === 'mx/connect/memberConnected') {
-                            myApp.handleSuccessfulConnection(payload)
+                            console.log(payload)
+                            //successful callback
                         }
                     },
                     config: { ui_message_version: 4 },
                     targetOrigin: '*'
                 })
-
-                let handler
-                let params = new URLSearchParams(window.location.search)
-
-                // let options = {
-                //     env: params.get('environment'),
-                //     onSuccess: function(public_token, metadata) {
-                //         $.post('/get_access_token', { public_token }).then(setTimeout(() => location.reload(), 1000))
-                //     },
-                //     onExit: function(error, metadata) {
-                //         // The user encountered a Mx API error prior to exiting.
-                //         if (error != null) {
-                //             $.post('/get_access_token', { error }).then(setTimeout(() => location.reload(), 1000))
-                //         }
-                //         // The user exited the Link flow.
-                //         $.post('/get_access_token', { exit: true }).then(setTimeout(() => location.reload(), 1000))
-                //     }
-                // }
 
                 // $.post('/accounts').then(accounts => {
                 //     console.log(accounts)
@@ -94,7 +86,9 @@
 
                 $('#link-button').on('click', function(e) {
                     console.log('link button clicked')
-                    $.post('/get_widget_url', {}).then(url => {
+                    $.post('/api/get_mxconnect_widget_url', {}).then(url => {
+                        console.log('have url, calling mxConnect.load()')
+                        console.log(mxConnect.load)
                         mxConnect.load({ url })
                     })
                 })
