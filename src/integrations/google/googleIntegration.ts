@@ -7,6 +7,7 @@ import { logInfo, logError } from '../../common/logging'
 import { Account, AccountTypes } from '../../types/account'
 import { sortBy, groupBy } from 'lodash'
 import { startOfMonth, format, formatISO, parseISO } from 'date-fns'
+const http = require('http')
 
 export interface Range {
     sheet: string
@@ -373,7 +374,7 @@ export class GoogleIntegration {
                 documentId = this.googleConfig.documentId[1]
                 break
             case AccountTypes.Disabled:
-                break;
+                break
             case AccountTypes.Transactional:
             default:
                 properties = this.config.transactions.properties
@@ -479,7 +480,7 @@ export class GoogleIntegration {
 
     public balanceHistory = async (sheetTitle: string, accounts: Account[], useTemplate?: boolean) => {
         let columnHeaders = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
-        columnHeaders =[ ...columnHeaders, ...columnHeaders.map(x => columnHeaders[0] +x)]
+        columnHeaders = [...columnHeaders, ...columnHeaders.map(x => columnHeaders[0] + x)]
         const ids = accounts.map(account => account.accountId)
         const rowOffset: number = 3 // 1 to not overwrite last line, two for account id/name
         const dateFormat = 'MM/dd/yyyy'
@@ -584,5 +585,46 @@ export class GoogleIntegration {
         console.log('Recorded new day in history')
 
         return this.updateRanges([{ range: newDataRange, data: [row] }])
+    }
+
+    public setOptionPrices = async (): Promise<void> => {
+        console.log('setOptionPrices')
+        const optionStrings = await this.sheets.values
+            .get({
+                spreadsheetId: this.googleConfig.documentId[1],
+                range: `Option Prices!A1:A`
+            })
+            .then(({ data }) => {
+                data.values.forEach(row => {
+                    console.log(row[0])
+                    this.getOptionPrice(row[0])
+                })
+            })
+    }
+
+    private getOptionPrice(optionString: string): any {
+        let data = ''
+        const request = http.get(`http://query2.finance.yahoo.com/v7/finance/options/${optionString}`, response => {
+            // Set the encoding, so we don't get log to the console a bunch of gibberish binary data
+            response.setEncoding('utf8')
+
+            // As data starts streaming in, add each chunk to "data"
+            response.on('data', chunk => {
+                data += chunk
+            })
+
+            // The whole response has been received. Print out the result.
+            response.on('end', () => {
+                return console.log(data)
+            })
+        })
+
+        // Log errors if any occur
+        request.on('error', error => {
+            console.error(error)
+        })
+
+        // End the request
+        request.end()
     }
 }

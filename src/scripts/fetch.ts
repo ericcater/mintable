@@ -13,6 +13,11 @@ import { Transaction, TransactionRuleCondition, TransactionRule } from '../types
 export default async () => {
     const config = getConfig()
 
+    const google = new GoogleIntegration(config)
+    await google.setOptionPrices()
+    return;
+
+
     // Start date to fetch transactions, default to 2 months of history
     let startDate = config.transactions.startDate
         ? parseISO(config.transactions.startDate)
