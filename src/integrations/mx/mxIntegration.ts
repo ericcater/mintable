@@ -107,7 +107,7 @@ export class MxIntegration {
                     }
 
                     const widgetResponse = await client.requestWidgetURL(userGuid, widgetRequestBody)
-                    console.log('got url')
+                    console.log(widgetResponse.data?.widget_url)
                     response.json(widgetResponse.data?.widget_url)
                     //   response.json(widgetResponse.data?.widget_url?.url)
                 } catch (e) {

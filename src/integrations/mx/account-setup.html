@@ -8,6 +8,28 @@
 
         <script src="https://atrium.mx.com/connect.js"></script>
 
+        <script>
+            var mxConnect = new window.MXConnect({
+                id: 'connect-widget',
+                iframeTitle: 'Connect',
+                /**
+                 * Callback that for handling all events within Connect.
+                 * Only called in  ui_message_version 4 or higher.
+                 *
+                 * The events called here are the same events that come through post
+                 * messages.
+                 */
+                onEvent: function(type, payload) {
+                    if (type === 'mx/connect/memberConnected') {
+                        // myApp.handleSuccessfulConnection(payload)
+                        console.log(payload)
+                    }
+                },
+                config: { ui_message_version: 4 },
+                targetOrigin: '*'
+            })
+        </script>
+
         <div id="container">
             <img id="logo" src="/img/icon.png" alt="Mintable Logo" />
             <h1>Mintable</h1>
@@ -21,31 +43,8 @@
             <button id="done-button">Done Linking Accounts</button>
         </div>
 
-
-
         <script type="text/javascript">
             ;(function($) {
-                var mxConnect = new window.MXConnect({
-                    id: 'connect-widget',
-                    iframeTitle: 'Connect',
-                    /**
-                     * Callback that for handling all events within Connect.
-                     * Only called in  ui_message_version 4 or higher.
-                     *
-                     * The events called here are the same events that come through post
-                     * messages.
-                     */
-                    onEvent: function(type, payload) {
-                        console.log("onEvent", type, payload);
-                        if (type === 'mx/connect/memberConnected') {
-                            console.log(payload)
-                            //successful callback
-                        }
-                    },
-                    config: { ui_message_version: 4 },
-                    targetOrigin: '*'
-                })
-
                 // $.post('/accounts').then(accounts => {
                 //     console.log(accounts)
 
@@ -88,7 +87,7 @@
                     console.log('link button clicked')
                     $.post('/api/get_mxconnect_widget_url', {}).then(url => {
                         console.log('have url, calling mxConnect.load()')
-                        console.log(mxConnect.load)
+                        // console.log(mxConnect.load)
                         mxConnect.load({ url })
                     })
                 })
