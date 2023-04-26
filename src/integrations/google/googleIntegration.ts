@@ -7,7 +7,8 @@ import { logInfo, logError } from '../../common/logging'
 import { Account, AccountTypes } from '../../types/account'
 import { sortBy, groupBy } from 'lodash'
 import { startOfMonth, format, formatISO, parseISO } from 'date-fns'
-const http = require('http')
+import { jsonc } from 'jsonc'
+var axios = require('axios').default
 
 export interface Range {
     sheet: string
@@ -587,44 +588,57 @@ export class GoogleIntegration {
         return this.updateRanges([{ range: newDataRange, data: [row] }])
     }
 
-    public setOptionPrices = async (): Promise<void> => {
-        console.log('setOptionPrices')
-        const optionStrings = await this.sheets.values
+    public getValues(spreadsheetId: string, range: string): Promise<sheets_v4.Schema$ValueRange> {
+        return this.sheets.values
             .get({
-                spreadsheetId: this.googleConfig.documentId[1],
-                range: `Option Prices!A1:A`
+                spreadsheetId,
+                range
             })
-            .then(({ data }) => {
-                data.values.forEach(row => {
-                    console.log(row[0])
-                    this.getOptionPrice(row[0])
-                })
+            .then(res => {
+                // logInfo(`Cleared ${ranges.length} range(s): ${translatedRanges}`, res.data)
+                return res.data
+            })
+            .catch(error => {
+                logError(`Error geting values from  ${range}`, error)
+                return {}
             })
     }
 
-    private getOptionPrice(optionString: string): any {
-        let data = ''
-        const request = http.get(`http://query2.finance.yahoo.com/v7/finance/options/${optionString}`, response => {
-            // Set the encoding, so we don't get log to the console a bunch of gibberish binary data
-            response.setEncoding('utf8')
-
-            // As data starts streaming in, add each chunk to "data"
-            response.on('data', chunk => {
-                data += chunk
-            })
-
-            // The whole response has been received. Print out the result.
-            response.on('end', () => {
-                return console.log(data)
-            })
+    public setOptionPrices = async (): Promise<void> => {
+        let prices: [string[]] = [[]]
+        console.log('setOptionPrices')
+        const optionStrings = await this.sheets.values.get({
+            spreadsheetId: this.googleConfig.documentId[1],
+            range: `Option Prices!A1:A`
         })
 
-        // Log errors if any occur
-        request.on('error', error => {
-            console.error(error)
-        })
+        for (var row of optionStrings.data.values) {
+            console.log(row[0])
+            const price = (await this.getOptionPrice(row[0])) || -1
+            prices.push([row[0], price])
+        }
 
-        // End the request
-        request.end()
+        this.updateRanges(
+            [{ range: { sheet: 'Option Prices', start: 'D1', end: `E${prices.length}` }, data: prices }],
+            this.googleConfig.documentId[1]
+        )
+    }
+
+    private async getOptionPrice(optionString: string): Promise<any> {
+        console.log(optionString)
+        const options = {
+            method: 'GET',
+            url: `http://query2.finance.yahoo.com/v7/finance/options/${optionString}`,
+            params: {},
+            headers: {}
+        }
+
+        return axios.request(options).then(function(response) {
+            console.log(response.data)
+            if (response?.data?.optionChain?.result[0]?.quote?.regularMarketPrice) {
+                return response.data.optionChain.result[0].quote.regularMarketPrice
+            }
+            return -1
+        })
     }
 }
