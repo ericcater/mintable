@@ -32,8 +32,7 @@ export class MxIntegration {
             password: this.mxConfig.credentials.apiKey,
 
             // Configure environment. https://int-api.mx.com for development, https://api.mx.com for production
-            basePath:
-                process.env.DEVELOPMENT_ENVIRONMENT == 'production' ? 'https://api.mx.com' : 'https://int-api.mx.com',
+            basePath: this.mxConfig.environment == 'production' ? 'https://api.mx.com' : 'https://int-api.mx.com',
 
             baseOptions: {
                 headers: {
@@ -43,6 +42,8 @@ export class MxIntegration {
         })
 
         this.client = new MxPlatformApi(configuration)
+
+        console.log(configuration.basePath)
 
         this.getOrCreateUser()
     }
@@ -98,7 +99,7 @@ export class MxIntegration {
                 try {
                     const widgetRequestBody = {
                         widget_url: {
-                            include_transactions: true,
+                            include_transactions: false,
                             is_mobile_webview: false,
                             mode: 'verification',
                             ui_message_version: 4,
@@ -107,9 +108,19 @@ export class MxIntegration {
                     }
 
                     const widgetResponse = await client.requestWidgetURL(userGuid, widgetRequestBody)
-                    console.log(widgetResponse.data?.widget_url)
+                    // console.log(widgetResponse.data?.widget_url)
                     response.json(widgetResponse.data?.widget_url)
                     //   response.json(widgetResponse.data?.widget_url?.url)
+                } catch (e) {
+                    logError('requestWidgetURL', e)
+                }
+            })
+
+            app.post('/accounts', async function(request, response) {
+                console.log('/accounts')
+                try {
+                    const accounts = await (await client.listUserAccounts(userGuid)).data?.accounts
+                    response.json(accounts)
                 } catch (e) {
                     logError('requestWidgetURL', e)
                 }

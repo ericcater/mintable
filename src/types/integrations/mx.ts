@@ -1,6 +1,7 @@
 import { BaseIntegrationConfig, IntegrationId, IntegrationType } from '../integrations'
 
 export enum MxEnvironmentType {
+    Production = 'production',
     Development = 'development',
     Sandbox = 'sandbox'
 }
