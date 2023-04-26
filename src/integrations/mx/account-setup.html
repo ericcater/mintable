@@ -1,96 +1,141 @@
+<!DOCTYPE html>
 <html>
     <head>
-        <link rel="stylesheet" href="/css/account-setup.css" />
+        <title>Atrium Demo</title>
+        <style type="text/css">
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
+                    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+            }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+
+        <!-- Source the connect.js file, this gives access to MXConnect constructor on window -->
+        <script type="text/javascript" src="https://atrium.mx.com/connect.js"></script>
     </head>
 
     <body>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+        <!-- Simple input to put your connect widget URL. -->
+        <input id="connecturl" type="text" />
+        <button id="openConnect">Open Connect</button>
+        <button id="closeConnect">Close Connect</button>
+        <div id="widget"></div>
 
-        <script src="https://atrium.mx.com/connect.js"></script>
+        <script type="text/javascript">
+            var openButton = document.getElementById('openConnect')
+            var closeButton = document.getElementById('closeConnect')
 
-        <script>
+            // Create an instance of MXConnect.
+            // Used for setting up any configuration options and registering callbacks.
             var mxConnect = new window.MXConnect({
-                id: 'connect-widget',
+                id: 'widget',
                 iframeTitle: 'Connect',
                 /**
-                 * Callback that for handling all events within Connect.
-                 * Only called in  ui_message_version 4 or higher.
+                 * Callback that for handling all events withhin connect.
+                 * Only called in  ui_message_version 4 or higher
                  *
                  * The events called here are the same events that come through post
                  * messages.
+                 *
+                 * Details about the events:
+                 * https://atrium.mx.com/docs#connect-events
                  */
                 onEvent: function(type, payload) {
-                    if (type === 'mx/connect/memberConnected') {
-                        // myApp.handleSuccessfulConnection(payload)
-                        console.log(payload)
-                    }
+                    console.log('onEvent', type, payload)
                 },
-                config: { ui_message_version: 4 },
+                /**
+                 * *Deprecated*. Called when the connect widget is mounted in the DOM.
+                 * Only called if the `ui_message_version` is below `4` or not set all.
+                 */
+                onLoad: function(event) {
+                    console.log('onLoad', event)
+                },
+                /**
+                 * *Deprecated*. Called when a member is successfully 'CONNECTED'.
+                 * Only called if the `ui_message_version` is below `4` or not set all.
+                 */
+                onSuccess: function(event) {
+                    console.log('onSuccess', event)
+                },
+                /**
+                 * Any configuration options documented can be configured here:
+                 * https://atrium.mx.com/docs#configuration
+                 *
+                 * These values will override any configuration values that were set when
+                 * the URL was requested.
+                 */
+                // config: {},
                 targetOrigin: '*'
+            })
+
+            /**
+             * When we click the open button, get the URL in the input field and load.
+             *
+             * A 'real' integration would need to get a URL from atrium.
+             * See the docs for details: https://atrium.mx.com/docs#get-a-url
+             */
+            openButton.addEventListener('click', function() {
+                  var connectURLInput = document.getElementById('connecturl')
+                var connectURL = connectURLInput.value
+                $.post('/api/get_mxconnect_widget_url', {}).then(url => {
+                    console.log('have url, calling mxConnect.load()')
+                    console.log(url.url)
+                    // mxConnect.load({ url })
+                    connectURL = url.url
+                })
+
+                mxConnect.load(connectURL)
+
+                // connectURLInput.value = ''
+            })
+
+            // Clear the widget on close click
+            closeButton.addEventListener('click', function() {
+                var connectIFrame = document.querySelector('iframe[title="Connect"]')
+
+                connectIFrame.remove()
+            })
+
+            /**
+             * Listen for post messages. You don't need to listen for post messages
+             * if using the `onEvent` callback and `ui_message_version` 4 or higher.
+             */
+            window.addEventListener('message', function(event) {
+                try {
+                    /**
+                     * Versions null -> 3. These versions are deprecated. They JSON encode
+                     * the `data` attribute so you must wrap in this in a try catch to try
+                     * to get the data.
+                     */
+                    const data = JSON.parse(event.data)
+
+                    if (data.moneyDesktop) {
+                        console.log('versions null -> 3', data)
+                    }
+                } catch (error) {
+                    /**
+                     * Versions 4 and on no longer JSON encode the data attribute. It should
+                     * be immediately accessible. If there is a data.mx attribute that is
+                     * `true` then this is a version 4 message at this point.
+                     */
+                    if (event.data.mx) {
+                        console.log('version 4 message', event.data)
+                    }
+                }
             })
         </script>
 
-        <div id="container">
-            <img id="logo" src="/img/icon.png" alt="Mintable Logo" />
-            <h1>Mintable</h1>
-            <h2>Mx Account Setup</h2>
-            <div id="accounts"><div id="accounts-table"></div></div>
-
-            <button id="link-button">Link A New Account</button>
-
-            <br />
-
-            <button id="done-button">Done Linking Accounts</button>
-        </div>
-
         <script type="text/javascript">
             ;(function($) {
-                // $.post('/accounts').then(accounts => {
-                //     console.log(accounts)
-
-                //     if (accounts.length == 0) {
-                //         const text = `<p>No Mx accounts set up yet. Click "Link A New Account" to add one.`
-                //         $('#accounts-table').append(text)
-                //     } else {
-                //         const text = `<h3>Current Accounts</h3>`
-                //         $('#accounts').prepend(text)
-                //         const table = `<table><tr><th>Token</th><th>Name</th><th>Update</th><th>Remove</th></tr></table>`
-                //         $('#accounts-table').append(table)
-
-                //         accounts.forEach(account => {
-                //             const updateButton = `<button class="update" data-access-token="${account.token}">Update</button>`
-                //             const removeButton = `<button class="remove" data-access-token="${account.token}">Remove</button>`
-                //             const row = `<tr><td>${account.token}</td><td>${account.name}</td><td>${updateButton}</td><td>${removeButton}</td></tr>`
-                //             $('#accounts table').append(row)
-                //         })
-                //     }
-                // })
-
-                // $(document).on('click', 'button.update', function(e) {
-                //     access_token = e.currentTarget.getAttribute('data-access-token')
-                //     $.post('/create_link_token', { access_token }).then(link_token => {
-                //         options.token = link_token.link_token
-                //         handler = Mx.create(options)
-                //         handler.open()
-                //     })
-                // })
-
-                // $(document).on('click', 'button.remove', function(e) {
-                //     const confirmed = confirm('Are you sure you want to remove this account? This cannot be undone.')
-                //     if (confirmed === true) {
-                //         token = e.currentTarget.getAttribute('data-access-token')
-                //         $.post('/remove', { token: token }).then(setTimeout(() => location.reload(), 1000))
-                //     }
-                // })
-
-                $('#link-button').on('click', function(e) {
-                    console.log('link button clicked')
-                    $.post('/api/get_mxconnect_widget_url', {}).then(url => {
-                        console.log('have url, calling mxConnect.load()')
-                        // console.log(mxConnect.load)
-                        mxConnect.load({ url })
-                    })
+                // $('#link-button').on('click', function(e) {
+                console.log('link button clicked')
+                $.post('/api/get_mxconnect_widget_url', {}).then(url => {
+                    console.log('have url, calling mxConnect.load()')
+                    // console.log(mxConnect.load)
+                    // mxConnect.load({ url })
+                    document.getElementById('connecturl').value = url.url
                 })
+                // })
 
                 $('#done-button').on('click', function(e) {
                     $.post('/done').then(data => {
