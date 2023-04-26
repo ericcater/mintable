@@ -46,6 +46,7 @@ export class MxIntegration {
         console.log(configuration.basePath)
 
         this.getOrCreateUser()
+        console.log(this.mxConfig.userGUID)
     }
 
     //If userGUID is not set in config, attempts to create one. If that fails, checks if one already exists.
@@ -61,6 +62,8 @@ export class MxIntegration {
                     config.integrations[IntegrationId.Mx] = mxConfig
 
                     return config
+
+
                 })
             } catch (e) {
                 logWarn('Failed to create user, continuing as if it exists', e)
@@ -122,7 +125,8 @@ export class MxIntegration {
                     const accounts = await (await client.listUserAccounts(userGuid)).data?.accounts
                     response.json(accounts)
                 } catch (e) {
-                    logError('requestWidgetURL', e)
+                    // logError('requestWidgetURL', e)
+                    response.json([])
                 }
             })
 
