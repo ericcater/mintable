@@ -519,12 +519,9 @@ export class GoogleIntegration {
         //#region add missing ids
 
         //#region check if this day has been done
-        const lastDate = await this.sheets.values
-            .get({
-                spreadsheetId: this.googleConfig.documentId[0],
-                range: `${sheetTitle}!A:A`
-            })
-            .then(({ data }) => data.values[data.values.length - 1][0])
+        const lastDate = await this.getValues(this.googleConfig.documentId[0], `${sheetTitle}!A:A`).then(
+            data => data.values[data.values.length - 1][0]
+        )
 
         if (lastDate === date) {
             console.log('Day has already been recorded in history')
@@ -532,12 +529,9 @@ export class GoogleIntegration {
         }
         // #endregion check if this day has been done
 
-        let idsFromSheet = await this.sheets.values
-            .get({
-                spreadsheetId: this.googleConfig.documentId[0],
-                range: `${sheetTitle}!1:1`
-            })
-            .then(({ data }) => data.values[0])
+        let idsFromSheet = await this.getValues(this.googleConfig.documentId[0], `${sheetTitle}!1:1`).then(
+            data => data.values[0]
+        )
 
         const missingIds = ids.filter(id => !idsFromSheet.includes(id))
 
@@ -567,12 +561,7 @@ export class GoogleIntegration {
             end: `${columnHeaders[row.length > 0 ? row.length - 1 : 1]}`
         })
 
-        const existingData = await this.sheets.values
-            .get({
-                spreadsheetId: this.googleConfig.documentId[0],
-                range: existingDataRange
-            })
-            .then(({ data }) => data)
+        const existingData = await this.getValues(this.googleConfig.documentId[0], existingDataRange)
 
         const numRows = existingData.values ? existingData.values.length : 0
         //#endregion get existing data
@@ -594,10 +583,7 @@ export class GoogleIntegration {
                 spreadsheetId,
                 range
             })
-            .then(res => {
-                // logInfo(`Cleared ${ranges.length} range(s): ${translatedRanges}`, res.data)
-                return res.data
-            })
+            .then(({ data }) => data)
             .catch(error => {
                 logError(`Error geting values from  ${range}`, error)
                 return {}
@@ -606,17 +592,19 @@ export class GoogleIntegration {
 
     public setOptionPrices = async (): Promise<void> => {
         let prices: [string[]] = [[]]
-        console.log('setOptionPrices')
         const optionStrings = await this.sheets.values.get({
             spreadsheetId: this.googleConfig.documentId[1],
             range: `Option Prices!A1:A`
         })
 
         for (var row of optionStrings.data.values) {
-            console.log(row[0])
-            const price = (await this.getOptionPrice(row[0])) || -1
-            prices.push([row[0], price])
+            if (row.length > 0) {
+                const price = (await this.getOptionPrice(row[0])) || -1
+                prices.push([row[0], price])
+            }
         }
+
+        this.clearRanges([{ sheet: 'Option Prices', start: 'D1', end: `E` }], this.googleConfig.documentId[1])
 
         this.updateRanges(
             [{ range: { sheet: 'Option Prices', start: 'D1', end: `E${prices.length}` }, data: prices }],
@@ -624,8 +612,8 @@ export class GoogleIntegration {
         )
     }
 
+    //should move this somewhere else
     private async getOptionPrice(optionString: string): Promise<any> {
-        console.log(optionString)
         const options = {
             method: 'GET',
             url: `http://query2.finance.yahoo.com/v7/finance/options/${optionString}`,
@@ -634,7 +622,6 @@ export class GoogleIntegration {
         }
 
         return axios.request(options).then(function(response) {
-            console.log(response.data)
             if (response?.data?.optionChain?.result[0]?.quote?.regularMarketPrice) {
                 return response.data.optionChain.result[0].quote.regularMarketPrice
             }

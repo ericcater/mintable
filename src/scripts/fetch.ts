@@ -13,10 +13,9 @@ import { Transaction, TransactionRuleCondition, TransactionRule } from '../types
 export default async () => {
     const config = getConfig()
 
+    //not an ideal spot for this
     const google = new GoogleIntegration(config)
-    await google.setOptionPrices()
-    return;
-
+    google.setOptionPrices()
 
     // Start date to fetch transactions, default to 2 months of history
     let startDate = config.transactions.startDate
