@@ -645,7 +645,7 @@ export class GoogleIntegration {
         logInfo('Cloning transactions')
         const names = (await this.getValues(this.googleConfig.documentId[0], `All!A1:D`)).values
 
-        const range = { sheet: 'Balances', start: 'J1', end: `M` }
+        const range = { sheet: 'All', start: 'J1', end: `M` }
         await this.clearRanges([range], this.googleConfig.documentId[2])
 
         this.updateRanges([{ range, data: names }], this.googleConfig.documentId[2])
