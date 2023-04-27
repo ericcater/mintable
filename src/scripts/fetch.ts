@@ -1,20 +1,21 @@
+import { parseISO, startOfMonth, subMonths } from 'date-fns'
 import { getConfig } from '../common/config'
+import { logInfo } from '../common/logging'
+import { CSVExportIntegration } from '../integrations/csv-export/csvExportIntegration'
+import { CSVImportIntegration } from '../integrations/csv-import/csvImportIntegration'
+import { GoogleIntegration } from '../integrations/google/googleIntegration'
 import { PlaidIntegration } from '../integrations/plaid/plaidIntegration'
 import { TellerIntegration } from '../integrations/teller/tellerIntegration'
-import { GoogleIntegration } from '../integrations/google/googleIntegration'
-import { logError, logInfo, logWarn } from '../common/logging'
 import { Account, AccountTypes } from '../types/account'
 import { IntegrationId } from '../types/integrations'
-import { parseISO, subMonths, startOfMonth } from 'date-fns'
-import { CSVImportIntegration } from '../integrations/csv-import/csvImportIntegration'
-import { CSVExportIntegration } from '../integrations/csv-export/csvExportIntegration'
-import { Transaction, TransactionRuleCondition, TransactionRule } from '../types/transaction'
 
 export default async () => {
     const config = getConfig()
 
     //not an ideal spot for this
     const google = new GoogleIntegration(config)
+
+    google.cloneAccountNames()
     google.setOptionPrices()
 
     // Start date to fetch transactions, default to 2 months of history
@@ -57,7 +58,7 @@ export default async () => {
                         accounts = accounts.concat(accountInvestmentTransactions)
                         break
                     case AccountTypes.Disabled:
-                         break;
+                        break
                     case AccountTypes.Transactional:
                     default:
                         accounts = accounts.concat(
@@ -84,67 +85,8 @@ export default async () => {
 
     accounts.flat(10)
 
-    const numTransactions = () =>
-        accounts
-            .map(account => (account.hasOwnProperty('transactions') ? account.transactions.length : 0))
-            .reduce((a, b) => a + b, 0)
-
-    const totalTransactions = numTransactions()
-
-    // const transactionMatchesRule = (transaction: Transaction, rule: TransactionRule): boolean => {
-    //     return rule.conditions
-    //         .map(condition => new RegExp(condition.pattern, condition.flags).test(transaction[condition.property]))
-    //         .every(condition => condition === true)
-    // }
-
-    // // Transaction Rules
-    // if (config.transactions.rules) {
-    //     let countOverridden = 0
-
-    //     accounts = accounts.map(account => ({
-    //         ...account,
-    //         transactions: account.transactions
-    //             .map(transaction => {
-    //                 config.transactions.rules.forEach(rule => {
-    //                     if (transaction && transactionMatchesRule(transaction, rule)) {
-    //                         if (rule.type === 'filter') {
-    //                             transaction = undefined
-    //                         }
-    //                         if (rule.type === 'override' && transaction.hasOwnProperty(rule.property)) {
-    //                             transaction[rule.property] = (transaction[rule.property].toString() as String).replace(
-    //                                 new RegExp(rule.findPattern, rule.flags),
-    //                                 rule.replacePattern
-    //                             )
-    //                             countOverridden += 1
-    //                         }
-    //                     }
-    //                 })
-
-    //                 return transaction
-    //             })
-    //             .filter(transaction => transaction !== undefined)
-    //     }))
-
-    //     logInfo(`${numTransactions()} transactions out of ${totalTransactions} total transactions matched filters.`)
-    //     logInfo(`${countOverridden} out of ${totalTransactions} total transactions overridden.`)
-    // }
-
-    switch (config.balances.integration) {
-        case IntegrationId.Google:
-            const google = new GoogleIntegration(config)
-            await google.updateBalances(accounts)
-            break
-        case IntegrationId.CSVExport:
-            const csv = new CSVExportIntegration(config)
-            await csv.updateBalances(accounts)
-            break
-        default:
-            break
-    }
-
     switch (config.transactions.integration) {
         case IntegrationId.Google:
-            const google = new GoogleIntegration(config)
             await google.updateTransactions(accounts, AccountTypes.Transactional)
             await google.updateHoldings(accounts.filter(account => account.holdings))
             await google.updateTransactions(accounts, AccountTypes.Invesment)
@@ -157,5 +99,20 @@ export default async () => {
         default:
             break
     }
-    logInfo("Done!")
+
+    switch (config.balances.integration) {
+        case IntegrationId.Google:
+            await google.updateBalances(accounts)
+            break
+        case IntegrationId.CSVExport:
+            const csv = new CSVExportIntegration(config)
+            await csv.updateBalances(accounts)
+            break
+        default:
+            break
+    }
+
+    await google.cloneTransactions()
+
+    logInfo('Done!')
 }

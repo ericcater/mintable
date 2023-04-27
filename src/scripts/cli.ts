@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 
 import prompts from 'prompts'
-const chalk = require('chalk')
-import { updateConfig, readConfig, getConfigSource } from '../common/config'
-import plaid from '../integrations/plaid/setup'
-import google from '../integrations/google/setup'
-import csvImport from '../integrations/csv-import/setup'
+import { getConfigSource, readConfig, updateConfig } from '../common/config'
+import { logError } from '../common/logging'
 import csvExport from '../integrations/csv-export/setup'
-import teller from '../integrations/teller/setup'
+import csvImport from '../integrations/csv-import/setup'
+import google from '../integrations/google/setup'
 import accountSetup from '../integrations/plaid/accountSetup'
+import plaid from '../integrations/plaid/setup'
 import tellerAccountSetup from '../integrations/teller/accountSetup'
+import teller from '../integrations/teller/setup'
 import fetch from './fetch'
 import migrate from './migrate'
-import { logError } from '../common/logging'
-;(async function() {
+const chalk = require('chalk')
+
+(async function() {
     const logo = [
         '\n',
         '          $',
