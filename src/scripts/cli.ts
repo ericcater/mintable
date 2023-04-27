@@ -14,7 +14,7 @@ import fetch from './fetch'
 import migrate from './migrate'
 const chalk = require('chalk')
 
-(async function() {
+;(async function() {
     const logo = [
         '\n',
         '          $',
