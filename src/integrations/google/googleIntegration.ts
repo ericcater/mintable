@@ -497,7 +497,6 @@ export class GoogleIntegration {
     }
 
     public balanceHistory = async (sheetTitle: string, accounts: Account[], useTemplate?: boolean) => {
-        console.log('1')
         let columnHeaders = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
         columnHeaders = [...columnHeaders, ...columnHeaders.map(x => columnHeaders[0] + x)]
         const ids = accounts.map(account => account.accountId)
@@ -506,11 +505,9 @@ export class GoogleIntegration {
         const date = format(new Date(), dateFormat)
 
         //#region create sheet
-        console.log('2')
         //create sheet if it doesn't exist
         const sheets = await this.getSheets()
         const existing = sheets.find(sheet => sheet.properties.title === sheetTitle)
-        console.log('3')
         if (existing === undefined) {
             if (this.googleConfig.template && useTemplate === true) {
                 const copied = await this.copySheet(
@@ -532,7 +529,6 @@ export class GoogleIntegration {
                 }
             ])
         }
-        console.log('4')
         //#endregion create sheet
 
         //#region add missing ids
@@ -546,7 +542,6 @@ export class GoogleIntegration {
             console.log('Day has already been recorded in history')
             return
         }
-        console.log('5')
         // #endregion check if this day has been done
 
         let idsFromSheet = await this.getValues(this.googleConfig.documentId[0], `${sheetTitle}!1:1`).then(
