@@ -616,7 +616,7 @@ export class GoogleIntegration {
             }
         }
 
-        this.clearRanges([{ sheet: 'Option Prices', start: 'D1', end: `E` }], this.googleConfig.documentId[1])
+        await this.clearRanges([{ sheet: 'Option Prices', start: 'D1', end: `E` }], this.googleConfig.documentId[1])
 
         this.updateRanges(
             [{ range: { sheet: 'Option Prices', start: 'D1', end: `E${prices.length}` }, data: prices }],
