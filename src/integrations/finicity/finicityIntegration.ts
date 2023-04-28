@@ -2,11 +2,12 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Config, updateConfig } from '../../common/config'
 import { IntegrationId } from '../../types/integrations'
 import { FinicityConfig, defaultFinicityConfig } from '../../types/integrations/finicity'
-import { logError, logWarn } from '../../common/logging'
+import { logError, logInfo, logWarn } from '../../common/logging'
 
 export class FinicityIntegration {
     config: Config
     finicityConfig: FinicityConfig
+    public Ready: Promise<any>
     accessToken: string = ''
     baseUrl = 'https://api.finicity.com'
     endpoints = {
@@ -20,8 +21,18 @@ export class FinicityIntegration {
         this.config = config
         this.finicityConfig = this.config.integrations[IntegrationId.Finicity] as FinicityConfig
 
-        this.getAccessToken().then(data => {
-            this.accessToken = data
+        this.Ready = new Promise((resolve, reject) => {
+            // now do something asynchronous
+            this.getAccessToken()
+                .then(result => {
+                    this.accessToken = result
+                    // at the end of the callback, resolve the readiness promise
+                    resolve(undefined)
+                })
+                .catch(reject)
+        })
+
+        this.Ready.then(() => {
             this.getOrCreateCustomer()
         })
     }
@@ -30,7 +41,11 @@ export class FinicityIntegration {
         console.log(`*${this.accessToken}`)
         if (this.finicityConfig.customerId === '') {
             try {
-                const id = this.addTestingCustomer().then(({ data }) => data.id)
+                logInfo('trying to create customer')
+                const id: string = await this.addTestingCustomer().then(({ data }) => {
+                    console.log(data)
+                    return data.id
+                })
 
                 updateConfig(config => {
                     const mxConfig =
@@ -40,6 +55,7 @@ export class FinicityIntegration {
 
                     return config
                 })
+                logInfo('success')
             } catch (e) {
                 logWarn('Failed to create user, continuing as if it exists', e)
 
@@ -54,6 +70,7 @@ export class FinicityIntegration {
 
                         return config
                     })
+                    logInfo('successfully pulled id')
                 } catch (e) {
                     logError('Failed to read user', e)
                 }

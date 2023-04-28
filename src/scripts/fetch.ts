@@ -14,7 +14,10 @@ export default async () => {
     const config = getConfig()
 
     const finicity = new FinicityIntegration(config)
-    finicity.getCustomers();
+    finicity.Ready.then(()=>{
+        // finicity.getCustomers();
+    })
+    
 
 
     return
