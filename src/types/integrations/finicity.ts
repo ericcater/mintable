@@ -18,6 +18,8 @@ export interface FinicityConfig extends BaseIntegrationConfig {
     environment: FinicityEnvironmentType
 
     credentials: FinicityCredentials
+
+    customerId
 }
 
 export const defaultFinicityConfig: FinicityConfig = {
@@ -31,5 +33,6 @@ export const defaultFinicityConfig: FinicityConfig = {
         partnerId: '',
         appKey: '',
         secret: ''
-    }
+    },
+    customerId:''
 }

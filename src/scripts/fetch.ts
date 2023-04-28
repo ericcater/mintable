@@ -8,9 +8,16 @@ import { parseISO, subMonths, startOfMonth } from 'date-fns'
 import { CSVImportIntegration } from '../integrations/csv-import/csvImportIntegration'
 import { CSVExportIntegration } from '../integrations/csv-export/csvExportIntegration'
 import { Transaction, TransactionRuleCondition, TransactionRule } from '../types/transaction'
+import { FinicityIntegration } from '../integrations/finicity/finicityIntegration'
 
 export default async () => {
     const config = getConfig()
+
+    const finicity = new FinicityIntegration(config)
+    finicity.getCustomers();
+
+
+    return
 
     // Start date to fetch transactions, default to 2 months of history
     let startDate = config.transactions.startDate
