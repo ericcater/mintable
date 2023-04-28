@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Config, updateConfig } from '../../common/config'
 import { IntegrationId } from '../../types/integrations'
-import { FinicityConfig, defaultFinicityConfig } from '../../types/integrations/finicity'
+import { Customer, FinicityConfig, defaultFinicityConfig } from '../../types/integrations/finicity'
 import { logError, logInfo, logWarn } from '../../common/logging'
 
 export class FinicityIntegration {
@@ -12,12 +12,13 @@ export class FinicityIntegration {
     baseUrl = 'https://api.finicity.com'
     endpoints = {
         authentication: '/aggregation/v2/partners/authentication',
-        getCustomers: '/aggregation/v1/customers',
+        customers: '/aggregation/v1/customers',
         addTestingCustomer: '/aggregation/v2/customers/testing',
         addCustomer: '/aggregation/v2/customers/active'
     }
 
     constructor(config: Config) {
+        logInfo('constructor')
         this.config = config
         this.finicityConfig = this.config.integrations[IntegrationId.Finicity] as FinicityConfig
 
@@ -32,20 +33,30 @@ export class FinicityIntegration {
                 .catch(reject)
         })
 
-        this.Ready.then(() => {
-            this.getOrCreateCustomer()
+        // this.Ready.then(() => {
+
+        // })
+    }
+
+    private async deleteAllCustomers() {
+        logInfo('deleteAllCustomers')
+        const customers = await this.getCustomers()
+
+        console.log(customers)
+        customers.forEach(customer => {
+            console.log(`deleting customer ${customer.id}`)
+            this.deleteCustomer(customer.id)
         })
     }
 
     private async getOrCreateCustomer() {
-        console.log(`*${this.accessToken}`)
+        logInfo('getOrCreateCustomer')
         if (this.finicityConfig.customerId === '') {
             try {
                 logInfo('trying to create customer')
-                const id: string = await this.addTestingCustomer().then(({ data }) => {
-                    console.log(data)
-                    return data.id
-                })
+
+                const id: string = await this.addTestingCustomer('mintable').then(({ data }) => data.id)
+                console.log(id)
 
                 updateConfig(config => {
                     const mxConfig =
@@ -60,7 +71,8 @@ export class FinicityIntegration {
                 logWarn('Failed to create user, continuing as if it exists', e)
 
                 try {
-                    const id = this.getCustomer('mintable').then(({ data }) => data.id)
+                    const id: string = await this.getCustomer('mintable').then(({ data }) => data.id)
+                    console.log(id)
 
                     updateConfig(config => {
                         const mxConfig =
@@ -79,12 +91,52 @@ export class FinicityIntegration {
     }
 
     public async doStuff(): Promise<void> {
-        await this.addCustomer()
+        logInfo('doStuff')
+        // await this.deleteAllCustomers()
+        await this.getOrCreateCustomer()
+        // console.log(await this.getCustomers())
+    }
 
-        this.getCustomers()
+    private async deleteCustomer(id: string) {
+        logInfo('deleteCUsomter')
+        const options: AxiosRequestConfig = {
+            method: 'DELETE',
+            url: `${this.baseUrl}${this.endpoints.customers}/${id}`,
+
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
+                'Finicity-App-Token': this.accessToken
+            }
+        }
+
+        return axios.request(options).then(({ data }) => {
+            return data
+        })
+    }
+
+    private async apiRequest(method: string, endpoint: string, data?: string): Promise<AxiosResponse> {
+        logInfo('deleteCUsomter')
+        const options: AxiosRequestConfig = {
+            method: method,
+            url: `${this.baseUrl}${endpoint}`,
+            data,
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
+                'Finicity-App-Token': this.accessToken
+            }
+        }
+
+        return axios.request(options).then(({ data }) => {
+            return data
+        })
     }
 
     public async getAccessToken(): Promise<string> {
+        logInfo('getAccessToken')
         const options: AxiosRequestConfig = {
             method: 'POST',
             url: `${this.baseUrl}${this.endpoints.authentication}`,
@@ -99,24 +151,18 @@ export class FinicityIntegration {
             }
         }
 
-        return axios
-            .request(options)
-            .then((response: AxiosResponse) => {
-                return response?.data?.token
-            })
-            .catch(function(error: AxiosError) {
-                console.error(error)
-            })
+        return axios.request(options).then((response: AxiosResponse) => {
+            return response?.data?.token
+        })
     }
 
-    public async addTestingCustomer(): Promise<AxiosResponse> {
+    public async addTestingCustomer(username: string): Promise<Customer> {
+        logInfo('addTestingCustomer')
         const options: AxiosRequestConfig = {
             method: 'POST',
             url: `${this.baseUrl}${this.endpoints.addTestingCustomer}`,
             data: JSON.stringify({
-                username: `mintable`,
-                firstName: 'mintable',
-                lastName: 'mintable'
+                username
             }),
             headers: {
                 'Content-Type': 'application/json',
@@ -126,10 +172,13 @@ export class FinicityIntegration {
             }
         }
 
-        return axios.request(options)
+        return axios.request(options).then(({ data }) => {
+            return data
+        })
     }
 
     public async getCustomer(username: string): Promise<AxiosResponse> {
+        logInfo('getCustomer')
         const options: AxiosRequestConfig = {
             method: 'POST',
             url: `${this.baseUrl}${this.endpoints.addTestingCustomer}`,
@@ -144,10 +193,13 @@ export class FinicityIntegration {
             }
         }
 
-        return axios.request(options)
+        return axios.request(options).then(({ data }) => {
+            return data
+        })
     }
 
-    public async addCustomer() {
+    public async addCustomer(): Promise<AxiosResponse> {
+        logInfo('addCustomer')
         const options: AxiosRequestConfig = {
             method: 'POST',
             url: `${this.baseUrl}${this.endpoints.addCustomer}`,
@@ -164,25 +216,20 @@ export class FinicityIntegration {
             }
         }
 
-        return axios
-            .request(options)
-            .then((response: AxiosResponse) => {
-                console.log(response.data)
-            })
-            .catch(function(error: AxiosError) {
-                console.error(error.message)
-                console.error(error.response.data)
-            })
+        return axios.request(options).then(({ data }) => {
+            return data
+        })
     }
 
-    public async getCustomers() {
+    public async getCustomers(): Promise<Customer[]> {
+        logInfo('getCustomers')
         const options: AxiosRequestConfig = {
             method: 'GET',
-            url: `${this.baseUrl}${this.endpoints.getCustomers}`,
-            // data: JSON.stringify({
-            //     partnerId: this.finicityConfig.credentials.partnerId,
-            //     partnerSecret: this.finicityConfig.credentials.secret
-            // }),
+            url: `${this.baseUrl}${this.endpoints.customers}`,
+            data: JSON.stringify({
+                partnerId: this.finicityConfig.credentials.partnerId,
+                partnerSecret: this.finicityConfig.credentials.secret
+            }),
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
@@ -191,13 +238,8 @@ export class FinicityIntegration {
             }
         }
 
-        return axios
-            .request(options)
-            .then((response: AxiosResponse) => {
-                console.log(response.data)
-            })
-            .catch(function(error: AxiosError) {
-                console.error(error)
-            })
+        return axios.request(options).then(({ data }) => {
+            return data.customers
+        })
     }
 }

@@ -34,5 +34,15 @@ export const defaultFinicityConfig: FinicityConfig = {
         appKey: '',
         secret: ''
     },
-    customerId:''
+    customerId: ''
+}
+
+export interface Customer {
+    id: string
+    username: string
+    firstName: string
+    lastName: string
+    type: string
+    createdDate: string
+    lastModifiedDate: string
 }
