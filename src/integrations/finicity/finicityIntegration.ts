@@ -1,20 +1,31 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Config, updateConfig } from '../../common/config'
 import { IntegrationId } from '../../types/integrations'
-import { Customer, FinicityConfig, defaultFinicityConfig } from '../../types/integrations/finicity'
+import {
+    FinicityConfig,
+    Method,
+    apiRequestArgs,
+    defaultFinicityConfig,
+    Customer
+} from '../../types/integrations/finicity'
 import { logError, logInfo, logWarn } from '../../common/logging'
+import { response } from 'express'
+import { method } from 'lodash'
 
 export class FinicityIntegration {
     config: Config
     finicityConfig: FinicityConfig
     public Ready: Promise<any>
     accessToken: string = ''
+    consumerId: string //move this to config?
     baseUrl = 'https://api.finicity.com'
     endpoints = {
         authentication: '/aggregation/v2/partners/authentication',
         customers: '/aggregation/v1/customers',
         addTestingCustomer: '/aggregation/v2/customers/testing',
-        addCustomer: '/aggregation/v2/customers/active'
+        addCustomer: '/aggregation/v2/customers/active',
+        generateConnectUrl: '/connect/v2/generate',
+        createConsumer: '/decisioning/v1/customers/'
     }
 
     constructor(config: Config) {
@@ -38,71 +49,22 @@ export class FinicityIntegration {
         // })
     }
 
-    private async deleteAllCustomers() {
-        logInfo('deleteAllCustomers')
-        const customers = await this.getCustomers()
-
-        console.log(customers)
-        customers.forEach(customer => {
-            console.log(`deleting customer ${customer.id}`)
-            this.deleteCustomer(customer.id)
-        })
-    }
-
-    private async getOrCreateCustomer() {
-        logInfo('getOrCreateCustomer')
-        if (this.finicityConfig.customerId === '') {
-            try {
-                logInfo('trying to create customer')
-
-                const id: string = await this.addTestingCustomer('mintable').then(({ data }) => data.id)
-                console.log(id)
-
-                updateConfig(config => {
-                    const mxConfig =
-                        (config.integrations[IntegrationId.Finicity] as FinicityConfig) || defaultFinicityConfig
-                    mxConfig.customerId = id
-                    config.integrations[IntegrationId.Finicity] = mxConfig
-
-                    return config
-                })
-                logInfo('success')
-            } catch (e) {
-                logWarn('Failed to create user, continuing as if it exists', e)
-
-                try {
-                    const id: string = await this.getCustomer('mintable').then(({ data }) => data.id)
-                    console.log(id)
-
-                    updateConfig(config => {
-                        const mxConfig =
-                            (config.integrations[IntegrationId.Finicity] as FinicityConfig) || defaultFinicityConfig
-                        mxConfig.customerId = id
-                        config.integrations[IntegrationId.Finicity] = mxConfig
-
-                        return config
-                    })
-                    logInfo('successfully pulled id')
-                } catch (e) {
-                    logError('Failed to read user', e)
-                }
-            }
-        }
-    }
-
     public async doStuff(): Promise<void> {
         logInfo('doStuff')
         // await this.deleteAllCustomers()
         await this.getOrCreateCustomer()
-        // console.log(await this.getCustomers())
+        await this.getOrCreateConsumer()
+        // console.log(await this.getCustomers('mintable'))
+        // console.log(await this.createConsumer())
+        console.log(await this.generateConnectUrl())
     }
 
-    private async deleteCustomer(id: string) {
-        logInfo('deleteCUsomter')
+    private async apiRequest(args: apiRequestArgs, raw?: boolean): Promise<any> {
+        logInfo(`apiRequest ${args.endpoint}`)
         const options: AxiosRequestConfig = {
-            method: 'DELETE',
-            url: `${this.baseUrl}${this.endpoints.customers}/${id}`,
-
+            method: args.method,
+            url: `${this.baseUrl}${args.endpoint}`,
+            data: args.data || '',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
@@ -110,29 +72,20 @@ export class FinicityIntegration {
                 'Finicity-App-Token': this.accessToken
             }
         }
+        console.log(options)
 
-        return axios.request(options).then(({ data }) => {
-            return data
-        })
-    }
-
-    private async apiRequest(method: string, endpoint: string, data?: string): Promise<AxiosResponse> {
-        logInfo('deleteCUsomter')
-        const options: AxiosRequestConfig = {
-            method: method,
-            url: `${this.baseUrl}${endpoint}`,
-            data,
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
-                'Finicity-App-Token': this.accessToken
+        return axios.request(options).then(response => {
+            if (!raw) {
+                return response.data
             }
-        }
-
-        return axios.request(options).then(({ data }) => {
-            return data
+            return response
         })
+        // .catch((e: AxiosError) => {
+        //     console.log(e)
+        //     console.log(e.cause)
+        //     console.log(e.message)
+        //     console.log(e.name)
+        // })
     }
 
     public async getAccessToken(): Promise<string> {
@@ -156,90 +109,192 @@ export class FinicityIntegration {
         })
     }
 
+    private async getOrCreateCustomer() {
+        logInfo('getOrCreateCustomer')
+        if (this.finicityConfig.customerId === '') {
+            try {
+                logInfo('trying to create customer')
+
+                const id: string = await this.addTestingCustomer('mintable').then(data => data.id)
+                console.log(id)
+
+                updateConfig(config => {
+                    const mxConfig =
+                        (config.integrations[IntegrationId.Finicity] as FinicityConfig) || defaultFinicityConfig
+                    mxConfig.customerId = id
+                    config.integrations[IntegrationId.Finicity] = mxConfig
+
+                    return config
+                })
+                logInfo('success')
+            } catch (e) {
+                logWarn('Failed to create user, continuing as if it exists', e.data)
+
+                try {
+                    const customer: Customer = await this.getCustomers('mintable').then(data => data[0])
+                    console.log(customer.id)
+
+                    if (!customer.id) {
+                        throw new Error()
+                    }
+                    updateConfig(config => {
+                        const mxConfig =
+                            (config.integrations[IntegrationId.Finicity] as FinicityConfig) || defaultFinicityConfig
+                        mxConfig.customerId = customer.id
+                        config.integrations[IntegrationId.Finicity] = mxConfig
+
+                        return config
+                    })
+                    logInfo('successfully pulled id')
+                } catch (e) {
+                    logError('Failed to read user', e.data)
+                }
+            }
+        }
+    }
+
+    private async getOrCreateConsumer() {
+        try {
+            const existingResponse = await this.getConsumer()
+            this.consumerId = existingResponse.id
+        } catch {
+            const newConsumer = await this.createConsumer()
+            this.consumerId = newConsumer.id
+        }
+    }
+
+    private async deleteAllCustomers() {
+        logInfo('deleteAllCustomers')
+        const customers = await this.getCustomers()
+
+        console.log(customers)
+        customers.forEach(customer => {
+            console.log(`deleting customer ${customer.id}`)
+            this.deleteCustomer(customer.id)
+        })
+    }
+
+    private async deleteCustomer(id: string) {
+        logInfo('deleteCustomer')
+        const options: AxiosRequestConfig = {
+            method: 'DELETE',
+            url: `${this.baseUrl}${this.endpoints.customers}/${id}`,
+
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
+                'Finicity-App-Token': this.accessToken
+            }
+        }
+
+        return axios.request(options).then(({ data }) => {
+            return data
+        })
+    }
+
     public async addTestingCustomer(username: string): Promise<Customer> {
         logInfo('addTestingCustomer')
-        const options: AxiosRequestConfig = {
-            method: 'POST',
-            url: `${this.baseUrl}${this.endpoints.addTestingCustomer}`,
+
+        return this.apiRequest({
+            method: Method.POST,
+            endpoint: this.endpoints.addTestingCustomer,
             data: JSON.stringify({
                 username
-            }),
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
-                'Finicity-App-Token': this.accessToken
-            }
-        }
-
-        return axios.request(options).then(({ data }) => {
-            return data
+            })
         })
     }
 
-    public async getCustomer(username: string): Promise<AxiosResponse> {
+    public async getCustomer(id: string): Promise<Customer> {
         logInfo('getCustomer')
-        const options: AxiosRequestConfig = {
-            method: 'POST',
-            url: `${this.baseUrl}${this.endpoints.addTestingCustomer}`,
-            data: JSON.stringify({
-                username: `username`
-            }),
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
-                'Finicity-App-Token': this.accessToken
-            }
-        }
-
-        return axios.request(options).then(({ data }) => {
+        return this.apiRequest({
+            method: Method.GET,
+            endpoint: `${this.endpoints.customers}/${id}`
+        }).then(data => {
+            console.log(data)
             return data
         })
     }
 
-    public async addCustomer(): Promise<AxiosResponse> {
+    public async addCustomer(username: string): Promise<AxiosResponse> {
         logInfo('addCustomer')
-        const options: AxiosRequestConfig = {
-            method: 'POST',
-            url: `${this.baseUrl}${this.endpoints.addCustomer}`,
+        return this.apiRequest({
+            method: Method.POST,
+            endpoint: this.endpoints.addCustomer,
             data: JSON.stringify({
-                username: `test_${Date.now()}`,
-                firstName: 'John',
-                lastName: 'Smith'
-            }),
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
-                'Finicity-App-Token': this.accessToken
-            }
-        }
-
-        return axios.request(options).then(({ data }) => {
-            return data
+                username: username
+            })
         })
     }
 
-    public async getCustomers(): Promise<Customer[]> {
+    public async getCustomers(username?: string): Promise<Customer[]> {
         logInfo('getCustomers')
-        const options: AxiosRequestConfig = {
-            method: 'GET',
-            url: `${this.baseUrl}${this.endpoints.customers}`,
+        return this.apiRequest({
+            method: Method.GET,
+            endpoint: this.endpoints.customers,
             data: JSON.stringify({
-                partnerId: this.finicityConfig.credentials.partnerId,
-                partnerSecret: this.finicityConfig.credentials.secret
-            }),
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'Finicity-App-Key': this.finicityConfig.credentials.appKey,
-                'Finicity-App-Token': this.accessToken
-            }
-        }
+                username: username
+            })
+        }).then(data => data.customers)
+    }
 
-        return axios.request(options).then(({ data }) => {
-            return data.customers
+    public async generateConnectUrl() {
+        return this.apiRequest({
+            method: Method.POST,
+            endpoint: this.endpoints.generateConnectUrl,
+            data: JSON.stringify({
+                language: 'en',
+                partnerId: this.finicityConfig.credentials.partnerId,
+                customerId: this.finicityConfig.customerId,
+                consumerId: this.consumerId,
+                redirectUri: 'https://www.finicity.com/connect/',
+                institutionSettings: {},
+                singleUseUrl: false,
+                fromDate: 1607450357,
+                reportCustomFields: [
+                    {
+                        label: 'loanID',
+                        value: '123456',
+                        shown: true
+                    },
+                    {
+                        label: 'loanID',
+                        value: '123456',
+                        shown: true
+                    }
+                ]
+            })
+        })
+    }
+
+    public async createConsumer() {
+        return this.apiRequest({
+            method: Method.POST,
+            endpoint: `${this.endpoints.createConsumer}${this.finicityConfig.customerId}/consumer`,
+            data: JSON.stringify({
+                firstName: 'Homer',
+                lastName: 'Loanseeke',
+                address: '434 W Ascension Way',
+                city: 'Murray',
+                state: 'UT',
+                zip: '84123',
+                phone: '1-800-986-3343',
+                ssn: '999601111',
+                birthday: {
+                    year: 1970,
+                    month: 7,
+                    dayOfMonth: 4
+                },
+                email: 'finicity@test.com',
+                suffix: 'Mr'
+            })
+        })
+    }
+
+    public async getConsumer(): Promise<any> {
+        return this.apiRequest({
+            method: Method.GET,
+            endpoint: `${this.endpoints.createConsumer}${this.finicityConfig.customerId}/consumer`
         })
     }
 }

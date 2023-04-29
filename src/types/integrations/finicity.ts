@@ -46,3 +46,16 @@ export interface Customer {
     createdDate: string
     lastModifiedDate: string
 }
+
+export enum Method {
+    POST = 'POST',
+    DELETE = 'DELETE',
+    GET = 'GET',
+    PUT = 'PUT'
+}
+
+export interface apiRequestArgs {
+    method: Method
+    endpoint: string
+    data?: string
+}
