@@ -52,6 +52,9 @@ export class FinicityIntegration {
     public async doStuff(): Promise<void> {
         logInfo('doStuff')
         // await this.deleteAllCustomers()
+
+        await this.addCustomer(`mintable_${Date.now()}`)
+        return
         await this.getOrCreateCustomer()
         await this.getOrCreateConsumer()
         // console.log(await this.getCustomers('mintable'))
