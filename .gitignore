@@ -14,3 +14,8 @@ yarn-error.log
 yarn.lock
 .next
 */.next
+
+src/integrations/finicity/api/
+finicity.yaml
+log.txt
+openapitools.json
