@@ -16,3 +16,9 @@ yarn.lock
 */.next
 private-key.teller.mintable.pem
 certificate.teller.mintable.pem
+
+
+src/integrations/finicity/api/
+openapitools.json
+log.txt
+finicity.yaml
