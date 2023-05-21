@@ -117,6 +117,7 @@
                         // When the user authenticates with a bank and receives an
                         // access token, load the accounts associated with the token.
                         currentAccessToken = enrollment.accessToken
+                        console.log(currentAccessToken)
                         $.post('/get_enrollment_accounts', { enrollment }).then(onEnrollmentAccounts)
                     },
                     onExit: function() {
