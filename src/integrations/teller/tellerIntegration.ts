@@ -55,6 +55,7 @@ export class TellerIntegration {
                 token: accessToken
             }
             this.config = config
+            logInfo(`${this.config.accounts}`)
             return config
         })
     }
@@ -85,6 +86,8 @@ export class TellerIntegration {
                     res.status(401)
                     return res.json({})
                 }
+                logInfo(`access token: ${req.body.accessToken}`)
+                logInfo(`account id: ${req.body.accountId}`)
                 this.registerAccount(req.body.accessToken, req.body.accountId)
                 resolve(logInfo('Teller access token saved for account.', req.body))
                 return res.json({})
@@ -95,6 +98,7 @@ export class TellerIntegration {
 
                 for (const accountId in this.config.accounts) {
                     const accountConfig: TellerAccountConfig = this.config.accounts[accountId] as TellerAccountConfig
+                    console.log(accountConfig)
                     if (accountConfig.integration === IntegrationId.Teller) {
                         const accountInfo = await this.tellerApi(accountConfig.token, `accounts/${accountConfig.id}`)
                         accounts.push({
