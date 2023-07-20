@@ -90,8 +90,8 @@ export class PlaidIntegration {
                 if (req.body.public_token !== undefined) {
                     client.itemPublicTokenExchange({ public_token: req.body.public_token }).then(res => {
                         this.savePublicToken(res.data)
-                        console.log(`public token: ${res.data.access_token}`)
-                        logInfo(`public token: ${res.data.access_token}`)
+                        console.log(`access token: ${res.data.access_token}`)
+                        logInfo(`access token: ${res.data.access_token}`)
                         resolve(logInfo('Plaid access token saved.', req.body))
                     })
                 } else if (req.body.exit !== undefined) {
@@ -145,6 +145,7 @@ export class PlaidIntegration {
 
                 res.json({ link_token: result.link_token })
                 console.log(`link token: ${result.link_token}`)
+                logInfo(`link token: ${result.link_token}`)
             })
             app.post('/remove', async (req, res) => {
                 try {

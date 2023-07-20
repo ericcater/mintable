@@ -409,6 +409,8 @@ export class GoogleIntegration {
 
             // Write transactions by month, copying template sheet if necessary
             for (const month in groupedTransactions) {
+                console.log(month)
+                console.log(groupedTransactions[month])
                 await this.updateSheet(
                     format(parseISO(month), this.googleConfig.dateFormat || 'yyyy.MM'),
                     groupedTransactions[month],
@@ -606,6 +608,7 @@ export class GoogleIntegration {
     }
 
     public async setOptionPrices(): Promise<void> {
+        try{
         let prices: [string[]] = [[]]
         const optionStrings = await this.getValues(this.googleConfig.documentId[1], `Option Prices!A1:A`)
 
@@ -622,6 +625,10 @@ export class GoogleIntegration {
             [{ range: { sheet: 'Option Prices', start: 'D1', end: `E${prices.length}` }, data: prices }],
             this.googleConfig.documentId[1]
         )
+        }
+        catch (error) {
+            logError("setOptionPrices()", error)
+        }
     }
 
     //should move this somewhere else

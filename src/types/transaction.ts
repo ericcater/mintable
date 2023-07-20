@@ -1,7 +1,7 @@
 import { TransactionBase } from './account'
 import { IntegrationId } from './integrations'
 
-export interface Transaction extends TransactionBase{
+export interface Transaction extends TransactionBase {
     // where this transaction's information came from
     integration: IntegrationId
 
