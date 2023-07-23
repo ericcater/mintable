@@ -3,7 +3,7 @@ import prompts from 'prompts'
 import { IntegrationId } from '../../types/integrations'
 import { updateConfig } from '../../common/config'
 import { logInfo, logError } from '../../common/logging'
-import { CSVAccountConfig } from '../../types/account'
+import { AccountTypes, CSVAccountConfig } from '../../types/account'
 
 export default async () => {
     return new Promise(async (resolve, reject) => {
@@ -58,7 +58,8 @@ export default async () => {
                 },
                 dateFormat: responses.dateFormat,
                 id: responses.account,
-                integration: IntegrationId.CSVImport
+                integration: IntegrationId.CSVImport,
+                type: AccountTypes.Transactional
             }
 
             updateConfig(config => {

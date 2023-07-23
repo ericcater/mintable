@@ -8,7 +8,7 @@ import bodyParser from 'body-parser'
 import { logInfo, logError, logWarn } from '../../common/logging'
 import http from 'http'
 import https from 'https'
-import { AccountConfig, Account, TellerAccountConfig } from '../../types/account'
+import { AccountConfig, Account, TellerAccountConfig, AccountTypes } from '../../types/account'
 import { Transaction } from '../../types/transaction'
 import { readFileSync } from 'fs'
 
@@ -52,7 +52,8 @@ export class TellerIntegration {
             config.accounts[accountId] = {
                 id: accountId,
                 integration: IntegrationId.Teller,
-                token: accessToken
+                token: accessToken,
+                type: AccountTypes.Transactional
             }
             this.config = config
             logInfo(`${this.config.accounts}`)

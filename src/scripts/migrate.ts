@@ -4,7 +4,7 @@ import { logInfo, logError, logWarn } from '../common/logging'
 import * as os from 'os'
 import { IntegrationId, IntegrationType } from '../types/integrations'
 import { defaultGoogleConfig } from '../types/integrations/google'
-import { AccountConfig } from '../types/account'
+import { AccountConfig, AccountTypes } from '../types/account'
 
 export const getOldConfig = (): ConfigSource => {
     if (argv['old-config-file']) {
@@ -66,7 +66,8 @@ export default () => {
                 const account: AccountConfig = {
                     id: key.replace('PLAID_TOKEN_', ''),
                     integration: IntegrationId.Plaid,
-                    token: oldConfig[key]
+                    token: oldConfig[key],
+                    type: AccountTypes.Transactional
                 }
                 accounts[account.id] = account
             }

@@ -50,7 +50,7 @@ export enum AccountTypes {
 export interface BaseAccountConfig {
     id: string
     integration: IntegrationId
-    type?: AccountTypes
+    type: AccountTypes
 }
 
 export interface PlaidAccountConfig extends BaseAccountConfig {

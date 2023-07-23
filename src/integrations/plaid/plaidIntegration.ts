@@ -21,7 +21,7 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import { logInfo, logError, logWarn } from '../../common/logging'
 import http from 'http'
-import { AccountConfig, Account, PlaidAccountConfig, TransactionBase } from '../../types/account'
+import { AccountConfig, Account, PlaidAccountConfig, TransactionBase, AccountTypes } from '../../types/account'
 import { Transaction } from '../../types/transaction'
 import { InvestmentTransaction } from '../../types/investmentTransaction'
 import { Holdings } from '../../types/holdings'
@@ -68,7 +68,8 @@ export class PlaidIntegration {
             config.accounts[tokenResponse.item_id] = {
                 id: tokenResponse.item_id,
                 integration: IntegrationId.Plaid,
-                token: tokenResponse.access_token
+                token: tokenResponse.access_token,
+                type: AccountTypes.Transactional
             }
             this.config = config
             return config
