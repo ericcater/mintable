@@ -409,8 +409,6 @@ export class GoogleIntegration {
 
             // Write transactions by month, copying template sheet if necessary
             for (const month in groupedTransactions) {
-                console.log(month)
-                console.log(groupedTransactions[month])
                 await this.updateSheet(
                     format(parseISO(month), this.googleConfig.dateFormat || 'yyyy.MM'),
                     groupedTransactions[month],
@@ -650,24 +648,24 @@ export class GoogleIntegration {
 
     public async cloneTransactions(): Promise<void> {
         logInfo('Cloning transactions')
-        const names = (await this.getValues(this.googleConfig.documentId[0], `All!A1:D`)).values
+        const transactions = (await this.getValues(this.googleConfig.documentId[0], `All!A1:D`)).values
 
         const range = { sheet: 'All', start: 'J1', end: `M` }
         await this.clearRanges([range], this.googleConfig.documentId[2])
 
-        this.updateRanges([{ range, data: names }], this.googleConfig.documentId[2])
+        this.updateRanges([{ range, data: transactions }], this.googleConfig.documentId[2])
     }
 
     public async cloneAccountNames(): Promise<void> {
         logInfo('Cloning Account Names')
-        const transactions = (await this.getValues(this.googleConfig.documentId[0], `Balances!M2:N`)).values
+        const names = (await this.getValues(this.googleConfig.documentId[0], `Balances!M2:N`)).values
         logInfo('Got Account Names')
 
         const range = { sheet: 'Balances', start: 'M', end: `N` }
         for (let i = 1; i < this.googleConfig.documentId.length; i++) {
             await this.clearRanges([range], this.googleConfig.documentId[i])
 
-            this.updateRanges([{ range, data: transactions }], this.googleConfig.documentId[i])
+            this.updateRanges([{ range, data: names }], this.googleConfig.documentId[i])
         }
     }
 }

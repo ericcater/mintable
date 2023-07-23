@@ -495,7 +495,7 @@ export class PlaidIntegration {
                 }))
 
                 // console.log(accounts)
-                logInfo(`Fetched ${data.accounts.length} sub-accounts and ${data.holdings.length} holdings.`, accounts)
+                logInfo(`Fetched ${data.accounts.length} sub-accounts and ${data.holdings.length} holdings.`)
                 return accounts
             })
             .catch(error => {

@@ -22,3 +22,6 @@ src/integrations/finicity/api/
 openapitools.json
 log.txt
 finicity.yaml
+imports/
+balances.csv
+transactions.csv
