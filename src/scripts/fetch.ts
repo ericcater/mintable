@@ -8,6 +8,7 @@ import { PlaidIntegration } from '../integrations/plaid/plaidIntegration'
 import { TellerIntegration } from '../integrations/teller/tellerIntegration'
 import { Account, AccountTypes } from '../types/account'
 import { IntegrationId } from '../types/integrations'
+import { argv } from 'process'
 
 export default async () => {
     const config = getConfig()
@@ -16,7 +17,7 @@ export default async () => {
     const google = new GoogleIntegration(config)
 
     google.cloneAccountNames()
-    google.setOptionPrices()
+    // google.setOptionPrices()
 
     // Start date to fetch transactions, default to 2 months of history
     let startDate = config.transactions.startDate
@@ -69,9 +70,11 @@ export default async () => {
                 break
 
             case IntegrationId.CSVImport:
-                const csv = new CSVImportIntegration(config)
-                accounts = accounts.concat(await csv.fetchAccount(accountConfig, startDate, endDate))
-                break
+                if (!argv['ci']) {
+                    const csv = new CSVImportIntegration(config)
+                    accounts = accounts.concat(await csv.fetchAccount(accountConfig, startDate, endDate))
+                    break
+                }
 
             case IntegrationId.Teller:
                 const teller = new TellerIntegration(config)
