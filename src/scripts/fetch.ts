@@ -10,6 +10,7 @@ import { Account, AccountTypes } from '../types/account'
 import { IntegrationId } from '../types/integrations'
 import { argv } from 'process'
 
+
 export default async () => {
     const config = getConfig()
 
